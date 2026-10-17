@@ -49,6 +49,9 @@ function Invoke-midPointRestMethod {
         Headers              = $headers
         SkipCertificateCheck = [bool]$session.SkipCertificateCheck
     }
+    if ($session.TimeoutSec) {
+        $httpParams.TimeoutSec = $session.TimeoutSec
+    }
     if ($PSBoundParameters.ContainsKey('Body')) {
         $httpParams.Body = ConvertTo-Json -InputObject $Body -Depth 50 -Compress
         Write-Debug ("midPoint request body: " + ($httpParams.Body -replace '"clearValue":"(\\.|[^"\\])*"', '"clearValue":"***"'))

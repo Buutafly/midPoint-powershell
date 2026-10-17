@@ -23,6 +23,7 @@ function Set-TestSession {
             AuthType             = 'Basic'
             Credential           = [pscredential]::new('tester', (ConvertTo-SecureString 'not-a-secret' -AsPlainText -Force))
             SkipCertificateCheck = $false
+            TimeoutSec           = 100
             UserName             = 'tester'
             UserOid              = '00000000-0000-0000-0000-000000000002'
             ConnectedAt          = Get-Date

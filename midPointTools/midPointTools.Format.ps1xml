@@ -134,6 +134,7 @@
               <ListItem><PropertyName>UserName</PropertyName></ListItem>
               <ListItem><PropertyName>AuthType</PropertyName></ListItem>
               <ListItem><PropertyName>SkipCertificateCheck</PropertyName></ListItem>
+              <ListItem><PropertyName>TimeoutSec</PropertyName></ListItem>
               <ListItem><PropertyName>ConnectedAt</PropertyName></ListItem>
             </ListItems>
           </ListEntry>

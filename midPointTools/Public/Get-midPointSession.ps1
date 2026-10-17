@@ -24,6 +24,7 @@ function Get-midPointSession {
         UserOid              = $session.UserOid
         AuthType             = $session.AuthType
         SkipCertificateCheck = $session.SkipCertificateCheck
+        TimeoutSec           = $session.TimeoutSec
         ConnectedAt          = $session.ConnectedAt
     }
 }

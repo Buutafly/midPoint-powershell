@@ -14,7 +14,9 @@ function Invoke-midPointHttp {
 
         [string] $Body,
 
-        [switch] $SkipCertificateCheck
+        [switch] $SkipCertificateCheck,
+
+        [int] $TimeoutSec = 100
     )
 
     $params = @{
@@ -24,6 +26,7 @@ function Invoke-midPointHttp {
         SkipHttpErrorCheck      = $true
         StatusCodeVariable      = 'statusCode'
         ResponseHeadersVariable = 'responseHeaders'
+        TimeoutSec              = $TimeoutSec
         ErrorAction             = 'Stop'
     }
     if ($PSBoundParameters.ContainsKey('Body')) {

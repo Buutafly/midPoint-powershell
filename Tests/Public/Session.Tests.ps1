@@ -51,6 +51,13 @@ Describe 'Connect-midPoint' {
         (Get-midPointSession).SkipCertificateCheck | Should -BeTrue
     }
 
+    It 'passes -TimeoutSec to every request' {
+        Add-TestRoute '^GET self$' (New-TestResponse -Json (Get-TestUserJson))
+        Connect-midPoint -Uri 'https://midpoint.example.com/midpoint' -Credential $cred -TimeoutSec 15
+        Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -ParameterFilter { $TimeoutSec -eq 15 }
+        (Get-midPointSession).TimeoutSec | Should -Be 15
+    }
+
     It 'keeps the previous session when the login fails' {
         Set-TestSession
         Add-TestRoute '^GET self$' (New-TestResponse -StatusCode 401 -Json '{ "message": "Authentication failed" }')

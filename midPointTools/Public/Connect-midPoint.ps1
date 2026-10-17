@@ -20,6 +20,9 @@ function Connect-midPoint {
     .PARAMETER SkipCertificateCheck
     Do not validate the server certificate (test systems with self-signed certificates only).
 
+    .PARAMETER TimeoutSec
+    How long to wait for midPoint to answer a request, in seconds. Default 100.
+
     .PARAMETER PassThru
     Return the session object.
 
@@ -43,6 +46,9 @@ function Connect-midPoint {
 
         [switch] $SkipCertificateCheck,
 
+        [ValidateRange(1, 3600)]
+        [int] $TimeoutSec = 100,
+
         [switch] $PassThru
     )
 
@@ -51,6 +57,7 @@ function Connect-midPoint {
         Write-Warning 'The connection uses http. The password is sent in clear text; use https outside of local test systems.'
     }
 
+    Write-Verbose "Connecting to $baseUri (timeout $TimeoutSec s)"
     $previous = $script:midPointSession
     $script:midPointSession = [pscustomobject]@{
         PSTypeName           = 'midPointTools.SessionData'
@@ -58,6 +65,7 @@ function Connect-midPoint {
         AuthType             = 'Basic'
         Credential           = $Credential
         SkipCertificateCheck = [bool]$SkipCertificateCheck
+        TimeoutSec           = $TimeoutSec
         UserName             = $null
         UserOid              = $null
         ConnectedAt          = $null

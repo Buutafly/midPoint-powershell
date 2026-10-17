@@ -6,6 +6,7 @@
 #   MIDPOINT_PASSWORD
 # Optional:
 #   MIDPOINT_SKIP_CERT_CHECK = 1   for self-signed test certificates
+#   MIDPOINT_TIMEOUT_SEC           request timeout in seconds (default 30 here)
 #   MIDPOINT_TEST_ROLE             a role name to assign / unassign
 #   MIDPOINT_TEST_RESOURCE         a resource the role provisions to (needs MIDPOINT_TEST_ROLE)
 #
@@ -23,7 +24,9 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
         Import-Module (Join-Path $PSScriptRoot '..' '..' 'midPointTools' 'midPointTools.psd1') -Force
         $password = ConvertTo-SecureString $env:MIDPOINT_PASSWORD -AsPlainText -Force
         $cred = [pscredential]::new($env:MIDPOINT_USER, $password)
-        Connect-midPoint -Uri $env:MIDPOINT_URI -Credential $cred -SkipCertificateCheck:($env:MIDPOINT_SKIP_CERT_CHECK -eq '1')
+        $timeout = if ($env:MIDPOINT_TIMEOUT_SEC) { [int]$env:MIDPOINT_TIMEOUT_SEC } else { 30 }
+        Write-Host "Connecting to $env:MIDPOINT_URI as $env:MIDPOINT_USER (timeout $timeout s)..."
+        Connect-midPoint -Uri $env:MIDPOINT_URI -Credential $cred -SkipCertificateCheck:($env:MIDPOINT_SKIP_CERT_CHECK -eq '1') -TimeoutSec $timeout
         $script:name = 'MPTEST-{0}' -f (Get-Random -Minimum 100000 -Maximum 999999)
     }
 
