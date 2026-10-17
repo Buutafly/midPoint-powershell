@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint and test
+        shell: pwsh
+        run: ./build/Invoke-Tests.ps1
+
+  publish:
+    name: Publish to the PowerShell Gallery
+    needs: test
+    runs-on: ubuntu-latest
+    # Configure this environment in the repository settings (e.g. required reviewers)
+    # and add the secret PSGALLERY_API_KEY to it.
+    environment: psgallery
+    permissions:
+      contents: write   # to create the GitHub release
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check that the tag matches ModuleVersion
+        shell: pwsh
+        run: |
+          $manifest = Import-PowerShellDataFile ./midPointTools/midPointTools.psd1
+          $tag = '${{ github.ref_name }}'.TrimStart('v')
+          $version = $manifest.ModuleVersion
+          $prerelease = $manifest.PrivateData.PSData.Prerelease
+          $expected = if ($prerelease) { "$version-$prerelease" } else { $version }
+          if ($tag -ne $expected) {
+              throw "Tag '${{ github.ref_name }}' does not match the module version '$expected' in midPointTools.psd1."
+          }
+          Write-Host "Releasing midPointTools $expected"
+
+      - name: Publish
+        shell: pwsh
+        env:
+          PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+        run: |
+          if (-not $env:PSGALLERY_API_KEY) { throw 'The secret PSGALLERY_API_KEY is not set.' }
+          Test-ModuleManifest ./midPointTools/midPointTools.psd1 | Out-Null
+          Publish-Module -Path ./midPointTools -NuGetApiKey $env:PSGALLERY_API_KEY -Verbose
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create '${{ github.ref_name }}' --title '${{ github.ref_name }}' --notes "See CHANGELOG.md for the changes in this version." --verify-tag
