@@ -1,0 +1,19 @@
+# Test output
+TestResults/
+coverage.xml
+*.nupkg
+
+# Local settings and secrets - never commit
+.env
+*.env
+*.local.ps1
+*.local.psd1
+secrets.*
+
+# Editors / OS
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
