@@ -79,6 +79,10 @@ $account.Attributes
 Remove-midPointUser $u -Confirm:$false
 ```
 
+On a **manual resource** (or while an approval is pending) midPoint only requests the account, so it does not
+exist yet. `Wait-midPointShadow -AllowPending -NoFetch` and `Test-midPointShadow -AllowPending` accept such a
+requested account; `Get-midPointShadow` shows it with `IsPending` and `PendingOperation`.
+
 ## Cmdlets
 
 | Area | Cmdlets |
@@ -119,7 +123,8 @@ Role assignments have their own status and validity (`Add-` / `Set-midPointRoleA
 
 The unit tests mock the HTTP layer and need no server. The integration tests in `Tests/Integration` run
 against a real midPoint when these environment variables are set: `MIDPOINT_URI`, `MIDPOINT_USER`,
-`MIDPOINT_PASSWORD`, optionally `MIDPOINT_SKIP_CERT_CHECK=1`, `MIDPOINT_TEST_ROLE`, `MIDPOINT_TEST_RESOURCE`.
+`MIDPOINT_PASSWORD`, optionally `MIDPOINT_SKIP_CERT_CHECK=1`, `MIDPOINT_TIMEOUT_SEC`, `MIDPOINT_TEST_ROLE`,
+`MIDPOINT_TEST_RESOURCE`, `MIDPOINT_TEST_RESOURCE_MANUAL=1` (manual resource) and `MIDPOINT_SHADOW_TIMEOUT_SEC`.
 They create one `MPTEST-…` user and delete it at the end.
 
 ## Releases

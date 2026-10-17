@@ -27,6 +27,10 @@ Reference: [midPoint REST API](https://docs.evolveum.com/midpoint/reference/inte
 - `itemDelta` as an **array** (several changes in one PATCH).
 - `replace` without `value` clears an item (`-ClearValidTo`, `-AdministrativeStatus None`).
 - `effectiveStatus` / `validityStatus` are returned by a plain `GET /users/{oid}`; `validTo` in the past gives `disabled` / `after`.
+- Adding a role assignment with `activation/validTo` (`Add-midPointRoleAssignment -PassThru` reads it back).
+- A search over `resources` without `options=noFetch` makes midPoint complete schema and capabilities of every
+  resource; one broken resource (e.g. a manual connector configuration) turns the search into a 250 partial error.
+  Name lookups of resources and shadows therefore use `noFetch`.
 - The REST user needs the REST authorization (`authorization-rest-3#all` or single operations) and the model authorizations; without them midPoint answers "Not authorized".
 
 ## To verify on midPoint 4.10 (TODO)
@@ -40,6 +44,8 @@ Run `Tests/Integration` with `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` s
 - [ ] `resolveNames` fills `targetRef.targetName` for assignments and `resourceRef.targetName` for shadows.
 - [ ] Shape of shadow `attributes` in JSON (keys `ri:mail` or `mail`; values as arrays).
 - [ ] Dead shadows are still in `linkRef` (relation `related`) and carry `dead: true`.
+- [ ] Pending operations on shadows of a manual resource: `pendingOperation[].executionStatus`, `delta.changeType`,
+      `delta.objectToAdd.attributes`, and `exists: false` until the case is closed.
 - [ ] Shape of the OperationResult on 4xx (the module searches for the first `message`).
 - [ ] `password/value/clearValue` for the initial password on create.
 

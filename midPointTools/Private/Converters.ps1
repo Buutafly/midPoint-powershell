@@ -114,6 +114,26 @@ function ConvertTo-midPointShadowObject {
 
     $resourceRef = Get-midPointProperty $InputObject 'resourceRef'
     $exists = Get-midPointProperty $InputObject 'exists'
+
+    # Not completed pending operations, e.g. an 'add' waiting for a manual resource case or an approval.
+    # TODO(verify): JSON shape of pendingOperation (delta.changeType, executionStatus) on 4.10.
+    $pending = @(Get-midPointProperty $InputObject 'pendingOperation' | Where-Object {
+            $null -ne $_ -and (Get-midPointProperty $_ 'executionStatus') -ne 'completed'
+        })
+    $pendingTypes = @($pending | ForEach-Object {
+            ConvertFrom-midPointQName (Get-midPointProperty (Get-midPointProperty $_ 'delta') 'changeType')
+        } | Where-Object { $_ })
+
+    $attributes = ConvertFrom-midPointAttributeContainer (Get-midPointProperty $InputObject 'attributes')
+    if ($attributes.Count -eq 0) {
+        # A shadow that only exists as a pending 'add' has its values in the delta.
+        $add = $pending | Where-Object { (ConvertFrom-midPointQName (Get-midPointProperty (Get-midPointProperty $_ 'delta') 'changeType')) -eq 'add' } |
+            Select-Object -First 1
+        if ($add) {
+            $objectToAdd = Get-midPointProperty (Get-midPointProperty $add 'delta') 'objectToAdd'
+            $attributes = ConvertFrom-midPointAttributeContainer (Get-midPointProperty $objectToAdd 'attributes')
+        }
+    }
     [pscustomobject]@{
         PSTypeName           = 'midPointTools.Shadow'
         Oid                  = [string](Get-midPointProperty $InputObject 'oid')
@@ -128,8 +148,10 @@ function ConvertTo-midPointShadowObject {
         Situation            = Get-midPointProperty $InputObject 'synchronizationSituation'
         Exists               = if ($null -eq $exists) { $true } else { [bool]$exists }
         Dead                 = [bool](Get-midPointProperty $InputObject 'dead')
+        IsPending            = $pending.Count -gt 0
+        PendingOperation     = $pendingTypes
         AdministrativeStatus = Get-midPointProperty (Get-midPointProperty $InputObject 'activation') 'administrativeStatus'
-        Attributes           = ConvertFrom-midPointAttributeContainer (Get-midPointProperty $InputObject 'attributes')
+        Attributes           = $attributes
         Raw                  = $InputObject
     }
 }

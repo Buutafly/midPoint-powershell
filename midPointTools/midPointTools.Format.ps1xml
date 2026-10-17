@@ -107,6 +107,7 @@
           <TableColumnHeader><Label>Intent</Label></TableColumnHeader>
           <TableColumnHeader><Label>Situation</Label></TableColumnHeader>
           <TableColumnHeader><Label>Exists</Label></TableColumnHeader>
+          <TableColumnHeader><Label>Pending</Label></TableColumnHeader>
         </TableHeaders>
         <TableRowEntries>
           <TableRowEntry>
@@ -118,6 +119,7 @@
               <TableColumnItem><PropertyName>Intent</PropertyName></TableColumnItem>
               <TableColumnItem><PropertyName>Situation</PropertyName></TableColumnItem>
               <TableColumnItem><PropertyName>Exists</PropertyName></TableColumnItem>
+              <TableColumnItem><ScriptBlock>$_.PendingOperation -join ', '</ScriptBlock></TableColumnItem>
             </TableColumnItems>
           </TableRowEntry>
         </TableRowEntries>

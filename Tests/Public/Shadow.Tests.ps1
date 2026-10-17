@@ -30,10 +30,15 @@ Describe 'Shadow cmdlets' {
         Add-TestRoute "^GET shadows/$ShadowOid\?" (New-TestResponse -Json (Get-ShadowJson -Oid $ShadowOid -ResourceOid $ResourceOid))
         Add-TestRoute "^GET shadows/$OtherOid\?" (New-TestResponse -Json (Get-ShadowJson -Oid $OtherOid -ResourceOid '77777777-7777-7777-7777-777777777777'))
         Add-TestRoute "^GET shadows/$deadOid\?" (New-TestResponse -Json (Get-ShadowJson -Oid $deadOid -ResourceOid $ResourceOid -Extra ', "dead": true, "exists": false'))
-        Add-TestRoute '^POST resources/search$' (New-TestResponse -Json (Get-TestSearchJson -Objects "{ `"oid`": `"$ResourceOid`", `"name`": `"Test Resource`" }"))
+        Add-TestRoute '^POST resources/search\?options=noFetch$' (New-TestResponse -Json (Get-TestSearchJson -Objects "{ `"oid`": `"$ResourceOid`", `"name`": `"Test Resource`" }"))
     }
 
     Context 'Get-midPointShadow' {
+        It 'looks up the resource name with noFetch' {
+            $null = Get-midPointShadow $UserOid -Resource 'Test Resource'
+            Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -ParameterFilter { $Uri -like '*resources/search?options=noFetch' }
+        }
+
         It 'returns the live accounts on the resource with flattened attributes' {
             $s = @(Get-midPointShadow $UserOid -Resource 'Test Resource')
             $s.Count | Should -Be 1
@@ -61,6 +66,44 @@ Describe 'Shadow cmdlets' {
         }
     }
 
+    Context 'Pending accounts (manual resource)' {
+        BeforeEach {
+            $pendingJson = @"
+{ "shadow": {
+    "oid": "$ShadowOid", "name": "jack", "exists": false,
+    "resourceRef": { "oid": "$ResourceOid", "type": "c:ResourceType", "targetName": "Test Resource" },
+    "kind": "account", "intent": "default",
+    "pendingOperation": [ { "executionStatus": "executing", "type": "manual",
+        "delta": { "changeType": "add", "objectToAdd": { "attributes": { "ri:mail": [ "jack@example.com" ] } } } } ]
+} }
+"@
+            Add-TestRoute "^GET shadows/$ShadowOid\?" (New-TestResponse -Json $pendingJson)
+        }
+
+        It 'reports the pending add and the requested attributes' {
+            $s = @(Get-midPointShadow $UserOid -Resource $ResourceOid)
+            $s.Count | Should -Be 1
+            $s[0].Exists | Should -BeFalse
+            $s[0].IsPending | Should -BeTrue
+            $s[0].PendingOperation | Should -Be 'add'
+            $s[0].Attributes.mail | Should -Be 'jack@example.com'
+        }
+
+        It 'Test-midPointShadow counts it only with -AllowPending' {
+            Test-midPointShadow $UserOid -Resource $ResourceOid | Should -BeFalse
+            Test-midPointShadow $UserOid -Resource $ResourceOid -AllowPending | Should -BeTrue
+        }
+
+        It 'Wait-midPointShadow accepts it with -AllowPending' {
+            (Wait-midPointShadow $UserOid -Resource $ResourceOid -AllowPending -Attribute @{ mail = 'jack@example.com' }).IsPending | Should -BeTrue
+        }
+
+        It 'Wait-midPointShadow explains the timeout without -AllowPending' {
+            { Wait-midPointShadow $UserOid -Resource $ResourceOid -TimeoutSeconds 1 -IntervalSeconds 1 } |
+                Should -Throw '*only requested (pending add)*-AllowPending*'
+        }
+    }
+
     Context 'Test-midPointShadow' {
         It 'is true when the account exists' {
             Test-midPointShadow $UserOid -Resource $ResourceOid | Should -BeTrue
@@ -82,6 +125,17 @@ Describe 'Shadow cmdlets' {
 
             $s.Oid | Should -Be $ShadowOid
             Should -Invoke Start-Sleep -ModuleName midPointTools -Times 1 -Exactly
+        }
+
+        It 'shows progress while waiting' {
+            Mock Write-Progress -ModuleName midPointTools { }
+            Add-TestRoute "^GET shadows/$ShadowOid\?" @(
+                (New-TestResponse -Json (Get-ShadowJson -Oid $ShadowOid -ResourceOid $ResourceOid -Mail 'old@example.com'))
+                (New-TestResponse -Json (Get-ShadowJson -Oid $ShadowOid -ResourceOid $ResourceOid))
+            )
+            $null = Wait-midPointShadow $UserOid -Resource $ResourceOid -Attribute @{ mail = 'jack@example.com' } -IntervalSeconds 1
+            Should -Invoke Write-Progress -ModuleName midPointTools -ParameterFilter { $Status -like '*mail is*old@example.com*' }
+            Should -Invoke Write-Progress -ModuleName midPointTools -ParameterFilter { $Completed }
         }
 
         It 'returns at once when no attributes are given' {

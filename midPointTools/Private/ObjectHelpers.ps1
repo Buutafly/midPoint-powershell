@@ -168,7 +168,10 @@ function Resolve-midPointObjectOid {
         return $InputObject
     }
 
-    $found = @(Find-midPointObject -Type $Type -Filter ('name = {0}' -f (ConvertTo-midPointAxiomString $InputObject)))
+    # A search over resources or shadows must not contact the connectors: without noFetch midPoint
+    # completes schema and capabilities of every resource it finds (and reports a partial error when one fails).
+    $options = if ($Type -in 'resources', 'shadows') { @('noFetch') } else { @() }
+    $found = @(Find-midPointObject -Type $Type -Filter ('name = {0}' -f (ConvertTo-midPointAxiomString $InputObject)) -Options $options)
     if ($found.Count -eq 0) {
         $record = [System.Management.Automation.ErrorRecord]::new(
             [System.Management.Automation.ItemNotFoundException]::new("No object of type '$Type' with name '$InputObject' found."),

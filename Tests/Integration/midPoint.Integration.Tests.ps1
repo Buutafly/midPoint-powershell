@@ -9,6 +9,9 @@
 #   MIDPOINT_TIMEOUT_SEC           request timeout in seconds (default 30 here)
 #   MIDPOINT_TEST_ROLE             a role name to assign / unassign
 #   MIDPOINT_TEST_RESOURCE         a resource the role provisions to (needs MIDPOINT_TEST_ROLE)
+#   MIDPOINT_TEST_RESOURCE_MANUAL = 1   the resource is a manual resource: the account is only requested
+#                                       (open case), so the test accepts a pending account and does not fetch
+#   MIDPOINT_SHADOW_TIMEOUT_SEC    how long to wait for the account (default 180)
 #
 # Run: Invoke-Pester ./Tests/Integration -Tag Integration -Output Detailed
 # Creates one user named MPTEST-<random> and deletes it at the end.
@@ -88,10 +91,20 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
         }
 
         It 'shows the account on the resource' -Skip:(-not $hasResource) {
-            $s = Wait-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE -TimeoutSeconds 180
-            $s.Exists | Should -BeTrue
-            $s.Attributes.Count | Should -BeGreaterThan 0
-            Test-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE | Should -BeTrue
+            $manual = $env:MIDPOINT_TEST_RESOURCE_MANUAL -eq '1'
+            $wait = if ($env:MIDPOINT_SHADOW_TIMEOUT_SEC) { [int]$env:MIDPOINT_SHADOW_TIMEOUT_SEC } else { 180 }
+            Write-Host "Waiting up to $wait s for the account on '$env:MIDPOINT_TEST_RESOURCE'$(if ($manual) { ' (manual resource: a pending account counts)' })..."
+
+            $s = Wait-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE -TimeoutSeconds $wait -AllowPending:$manual -NoFetch:$manual
+            Write-Host "Found shadow $($s.Oid): exists=$($s.Exists), pending=$($s.PendingOperation -join ','), attributes: $(($s.Attributes.Keys | Sort-Object) -join ', ')"
+            if ($manual) {
+                ($s.Exists -or $s.IsPending) | Should -BeTrue
+            }
+            else {
+                $s.Exists | Should -BeTrue
+                $s.Attributes.Count | Should -BeGreaterThan 0
+            }
+            Test-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE -AllowPending:$manual -NoFetch:$manual | Should -BeTrue
         }
 
         It 'changes the assignment validity' {
