@@ -27,8 +27,8 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
 
 1. 0.2.0, one branch each (see "How we work"):
    - `feature/org-assignments`: `Get-midPointOrg`, `Get-` / `Add-` / `Set-` / `Remove-midPointOrgAssignment`
-     (shared code with the role assignments in `Private/Assignment.ps1`), unit tests green; integration test with
-     the new example org `050-org-test.xml` and `MIDPOINT_TEST_ORG` waiting for a run (user imports 030 and 050).
+     (shared code with the role assignments in `Private/Assignment.ps1`). Done: unit tests and integration run 11
+     green (example org `050-org-test.xml`, `MIDPOINT_TEST_ORG`); pull request Buutafly/midPoint-powershell#1.
    - `feature/user-extension`: `Extension` property on user objects (`$u.Extension.costCenter`), plain keys as in
      run 8.
    - `feature/user-password`: `Set-midPointUserPassword -Identity -NewPassword [-ForceChange]` in the style of
