@@ -87,6 +87,7 @@ Nothing else is changed: the role, the resource and all other objects are only r
 
 The tests also run against an existing role and resource: set `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` to
 their names. The role must give an account on that resource. Keep in mind that midPoint really provisions: with a real
-connector the test creates and deletes an account `MPTEST-<random>` in the target system and only waits for it.
+connector the test creates an account `MPTEST-<random>` in the target system, waits for it, and after removing the
+role waits until midPoint has deleted or disabled it (deleting the test user at the end deprovisions it as configured).
 The test recognises a manual (or semi-manual) resource by its connector type `ManualConnector` and then completes
 the cases of its account, which only works when the test user is the resource's operator.

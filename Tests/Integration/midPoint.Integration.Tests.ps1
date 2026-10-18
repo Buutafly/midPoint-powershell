@@ -17,7 +17,7 @@
 # Creates one user named MPTEST-<random> and deletes it at the end.
 # The role and the resource are never changed, only read: the test assigns the role to its own user (validTo in
 # 30 days), waits for the account on the resource (needs an inducement with a construction for that resource in the
-# role), clears the assignment's validTo, removes the assignment and waits until the account is gone.
+# role), clears the assignment's validTo, removes the assignment and waits until the account is deleted or disabled.
 # On a manual resource (connector type ManualConnector) the account changes are cases: the test then completes the
 # cases of its own account like an operator (MIDPOINT_USER must be the resource's operator) and deletes them at the end.
 # With a real connector this creates and deletes an account MPTEST-<random> in the target system.
@@ -189,11 +189,23 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
                 Wait-TestCase | Should -BeTrue -Because 'removing the role opens a case to delete the account'
                 Complete-TestCase -Comment 'midPointTools integration test' | Should -BeGreaterThan 0
             }
-            $deadline = [datetime]::UtcNow.AddSeconds($wait)
-            while ((Test-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE) -and [datetime]::UtcNow -lt $deadline) {
+            # Depending on the resource, midPoint deletes the account or only disables it when the role is removed.
+            Write-Host "Waiting up to $wait s until the account is deleted or disabled..."
+            $started = [datetime]::UtcNow
+            $state = $null
+            while ($true) {
+                $live = @(Get-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE)
+                $state = if ($live.Count -eq 0) { 'deleted' }
+                elseif (@($live | Where-Object AdministrativeStatus -EQ 'disabled').Count -eq $live.Count) { 'disabled' }
+                $elapsed = [int]([datetime]::UtcNow - $started).TotalSeconds
+                if ($state -or $elapsed -ge $wait) { break }
+                Write-Progress -Activity "Waiting for the account of $name to be removed" -Status "still active ($elapsed of $wait s)" -PercentComplete ([Math]::Min(100, 100 * $elapsed / $wait))
                 Start-Sleep -Seconds 2
             }
-            Test-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE | Should -BeFalse
+            Write-Progress -Activity "Waiting for the account of $name to be removed" -Completed
+            $info = if ($state) { $state } else { "still active: $(($live | ForEach-Object { "$($_.Name) (exists=$($_.Exists), status=$($_.AdministrativeStatus))" }) -join ', ')" }
+            Write-Host "Account after removing the role: $info"
+            $state | Should -Not -BeNullOrEmpty -Because 'midPoint deletes or disables the account when the role is removed'
         }
     }
 }
