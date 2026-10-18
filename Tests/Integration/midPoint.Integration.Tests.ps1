@@ -29,7 +29,8 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
         $cred = [pscredential]::new($env:MIDPOINT_USER, $password)
         $timeout = if ($env:MIDPOINT_TIMEOUT_SEC) { [int]$env:MIDPOINT_TIMEOUT_SEC } else { 30 }
         Write-Host "Connecting to $env:MIDPOINT_URI as $env:MIDPOINT_USER (timeout $timeout s)..."
-        Connect-midPoint -Uri $env:MIDPOINT_URI -Credential $cred -SkipCertificateCheck:($env:MIDPOINT_SKIP_CERT_CHECK -eq '1') -TimeoutSec $timeout
+        # Test instances often run on http; its only warning (clear-text password) is noise here.
+        Connect-midPoint -Uri $env:MIDPOINT_URI -Credential $cred -SkipCertificateCheck:($env:MIDPOINT_SKIP_CERT_CHECK -eq '1') -TimeoutSec $timeout -WarningAction SilentlyContinue
         $script:name = 'MPTEST-{0}' -f (Get-Random -Minimum 100000 -Maximum 999999)
     }
 
