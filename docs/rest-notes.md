@@ -41,7 +41,8 @@ Reference: [midPoint REST API](https://docs.evolveum.com/midpoint/reference/inte
 ## REST user for the integration tests
 
 A role for a test instance (full access to the model, so not for production). Assign it to a user with a password;
-the integration tests log in as that user.
+the integration tests log in as that user. Confirmed on 4.10: `GET /self` (read); add / modify / delete / assign
+still to be confirmed by a full integration run.
 
 ```xml
 <role xmlns="http://midpoint.evolveum.com/xml/ns/public/common/common-3">
