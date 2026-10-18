@@ -90,8 +90,7 @@ function ConvertTo-midPointAssignmentObject {
 
 function ConvertFrom-midPointAttributeContainer {
     # Shadow 'attributes' -> hashtable. Keys lose their namespace prefix ('ri:mail' -> 'mail'),
-    # single-element arrays become scalars.
-    # TODO(verify): key format of shadow attributes in 4.10 JSON (prefixed or with @ns).
+    # single-element arrays become scalars. midPoint 4.10 sends plain keys with an '@ns' entry (run 8).
     [CmdletBinding()]
     [OutputType([hashtable])]
     param([AllowNull()] [object] $Attributes)
@@ -119,7 +118,6 @@ function ConvertTo-midPointShadowObject {
     $exists = Get-midPointProperty $InputObject 'exists'
 
     # Not completed pending operations, e.g. an 'add' waiting for a manual resource case or an approval.
-    # TODO(verify): JSON shape of pendingOperation (delta.changeType, executionStatus) on 4.10.
     $pending = @(Get-midPointProperty $InputObject 'pendingOperation' | Where-Object {
             $null -ne $_ -and (Get-midPointProperty $_ 'executionStatus') -ne 'completed'
         })

@@ -57,6 +57,19 @@ Reference: [midPoint REST API](https://docs.evolveum.com/midpoint/reference/inte
 - Run 7 (2026-10-18, as `midpointtools-api` with the example objects): **all green**. Connector type
   `ManualConnector` read through `GET /connectors/{oid}` (the `connectors-read` authorization is enough), leftover
   cases deleted, the full case flow and the cleanup of the run's own cases work.
+- Run 8 (2026-10-18, as `midpointtools-api` with the example objects): **all green**.
+  - A reference written as `{ "type": "c:RoleType", "relation": "org:default" }` is accepted and comes back the same
+    way: `{ "oid", "relation": "org:default", "type": "c:RoleType", "targetName": ... }` (with `resolveNames`).
+    Shadow `resourceRef` likewise: `"type": "c:ResourceType"`, `targetName` filled by `resolveNames`.
+  - Shadow `attributes` (fetched and with `noFetch`): plain keys with an `@ns` entry, single values as scalars:
+    `{ "@ns": "http://midpoint.evolveum.com/xml/ns/public/resource/instance-3", "username": "...", "mail": "..." }`.
+  - Extension items without namespace: `-Property @{ 'extension/<item>' = ... }` on create, `-Replace` with a value
+    and with `''` (clears) work; `extension` comes back with plain keys (`{ "<item>": "..." }`).
+  - Initial password with `credentials/password/value/clearValue` is accepted; reading the user returns
+    `credentials.password` with `@metadata` and `value.encryptedData` (no clear value).
+  - After the account is deleted (manual resource, case completed) the shadow stays linked with
+    `"relation": "org:related"` and has `dead: true`, `exists: false`, both pending operations `completed` /
+    `success`. `Get-midPointShadow` hides it, `-IncludeDead` returns it.
 - Run 3 on a manual resource: 180 s after assigning the role, the user had no linked shadow on that resource
   (neither live nor pending). Still to be analysed.
 
@@ -107,18 +120,19 @@ authorization (`AUTZ.n> Evaluating authorization ...`) with its decision.
 Run `Tests/Integration` with `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` set for the remaining items
 (`MIDPOINT_TEST_EXTENSION_ITEM` for the extension item). The integration test prints the raw JSON of each item.
 
-- [ ] Reference type `c:RoleType` and relation `org:default` prefixes are resolved in JSON (the test assigns with
-      `-Relation default`). `org:manager` is covered by the unit tests only.
-- [ ] Extension items via `-Property @{ 'extension/costCenter' = ... }` without namespace (create, replace, clear).
-- [ ] `resolveNames` fills `targetRef.targetName` for assignments and `resourceRef.targetName` for shadows.
-- [ ] Raw shape of shadow `attributes` in JSON (prefix, arrays); the module's flattened keys already work (run 4).
-- [ ] Dead shadows are still in `linkRef` (relation `related`) and carry `dead: true`.
+- [x] Reference type `c:RoleType` and relation `org:default` prefixes are resolved in JSON (run 8, the test assigns
+      with `-Relation default`). `org:manager` is covered by the unit tests only.
+- [x] Extension items via `-Property @{ 'extension/costCenter' = ... }` without namespace (create, replace, clear;
+      run 8).
+- [x] `resolveNames` fills `targetRef.targetName` for assignments and `resourceRef.targetName` for shadows (run 8).
+- [x] Raw shape of shadow `attributes` in JSON: plain keys plus `@ns`, scalars for single values (run 8).
+- [x] Dead shadows are still in `linkRef` (relation `org:related`) and carry `dead: true` (run 8).
 - [x] Pending operations on shadows of a manual resource: `pendingOperation[].executionStatus`, `delta.changeType`,
       `delta.objectToAdd.attributes`, and `exists: false` until the case is closed (run 7: `exists=False`,
       pending `add` with the requested `mail` / `username`).
 - [x] Shape of the OperationResult on 4xx (the module searches for the first `message`): works for 403 and 404
       (run 6: "User 'midpointtools-api' not authorized for operation ...#cancelCase on case:...").
-- [ ] `password/value/clearValue` for the initial password on create.
+- [x] `password/value/clearValue` for the initial password on create (run 8: stored as `encryptedData`).
 - [x] The example API role (`Tests/Integration/midpoint/030-role-api.xml`) is enough for a full run (run 7, with
       `#cancelCase` added): filters `name startsWith "MPTEST-"`, `q:inOid`, `q:ref`, and the work item
       authorization with `assignee/special=self`.

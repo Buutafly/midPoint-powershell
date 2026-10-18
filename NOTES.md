@@ -16,24 +16,22 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
   - Fixed on the way (runs 5-7): `connectorRef` imported with a filter comes with prefixed keys (`"t:oid"`), so the
     connector type was never read (`Get-midPointProperty` now finds `<prefix>:<name>`); deleting a case needs
     `authorization-model-3#cancelCase` (added to `030-role-api.xml`).
-- Run 8 prepared (not yet run): the integration test prints / checks the open TODO items of `docs/rest-notes.md`
-  (`resolveNames` on assignment and shadow, raw shadow `attributes` with and without `noFetch`, the dead shadow after
-  the delete, `c:RoleType` / `org:default` in the assignment's `targetRef`), the initial password (user
-  `MPTEST-…-PW`) and, with `MIDPOINT_TEST_EXTENSION_ITEM` set, an extension item (user `MPTEST-…-EXT`).
+- Run 8 (2026-10-18): **all green**, all TODO items of `docs/rest-notes.md` confirmed: `resolveNames` on assignment
+  and shadow, raw shadow `attributes`, the dead shadow after the delete, `c:RoleType` / `org:default` in references,
+  the initial password (user `MPTEST-…-PW`) and an extension item (`MIDPOINT_TEST_EXTENSION_ITEM`, user
+  `MPTEST-…-EXT`).
 - The integration test deletes leftovers of aborted runs at the start (`MPTEST-` users, cases of `MPTEST-` accounts).
   If the connector type cannot be read, it still recognises a manual resource by the pending account with an open case.
 
 ## Next steps
 
-1. User runs run 8 (`MIDPOINT_TEST_EXTENSION_ITEM` set in `settings.local.ps1`); fix what it turns up and tick off
-   the TODO items in `docs/rest-notes.md` (references, `resolveNames`, raw attributes, dead shadows, password,
-   extension).
-2. Release 0.1.0, see "Release 0.1.0" below, after run 8 is green (user's decision, 2026-10-18), then the one-time
-   setup (step 2).
+1. Release 0.1.0, see "Release 0.1.0" below: waiting for the one-time setup (step 2), when the user decides.
+2. Open from run 3: on a manual resource the user once had no linked shadow 180 s after the assignment (not seen
+   since run 6).
 
 ## Release 0.1.0
 
-1. Integration tests green on 4.10: done (runs 4 and 7). Open TODO items in `docs/rest-notes.md` do not block 0.1.0.
+1. Integration tests green on 4.10: done (runs 4, 7 and 8); the TODO list in `docs/rest-notes.md` is done (run 8).
 2. One-time setup: PowerShell Gallery account, API key scoped to `midPointTools` (push new packages and versions),
    GitHub environment `psgallery` (Settings > Environments, optionally with a required reviewer) with the secret
    `PSGALLERY_API_KEY`. If the environment limits deployment branches and tags, it must allow the tags `v*`.
@@ -47,9 +45,8 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
 
 ## Road to 1.0.0
 
-- All items in the TODO list of `docs/rest-notes.md` confirmed; integration tests also on 4.8 (the minimum the
-  README claims).
-- Integration tests for extension attributes and the initial password.
+- Integration tests also on 4.8 (the minimum the README claims); the TODO list of `docs/rest-notes.md` is done on
+  4.10 (run 8).
 - Output objects and parameter sets stable over a few 0.x releases of real use.
 - Decide whether bearer token / OIDC login comes before 1.0 or can be added later without breaking changes.
 
@@ -104,19 +101,9 @@ We are working on the PowerShell module midPointTools in the repo Buutafly/midPo
 First read NOTES.md and docs/rest-notes.md on the main branch – they contain the status, decisions and next steps.
 Follow "How we work" in NOTES.md (public repo: no hostnames or secrets; commits authored by Buutafly with
 Co-Authored-By: Claude, no session link; run ./build/Invoke-Tests.ps1 before every push; keep main in sync).
-The integration tests (all green in run 7) run only on my machine; prepare them so that one run answers the
-open questions, I run them and paste the output.
+The integration tests (all green in run 8) run only on my machine; I run them and paste the output.
 
-1. Close the open items of the TODO list in docs/rest-notes.md that the test instance can answer: let the
-   integration test check or print `resolveNames` (targetRef.targetName of the assignment, resourceRef.targetName
-   of the shadow), the raw JSON of the shadow `attributes`, the dead shadow after the account is deleted
-   (`Get-midPointShadow -IncludeDead`: still in linkRef, `dead: true`), and the prefixes `c:RoleType` / `org:default`
-   in references. Fix what the run turns up and tick off the items.
-2. Add integration tests for the initial password on New-midPointUser (`password/value/clearValue`: midPoint
-   accepts it and the user has a password afterwards; the MPTEST- user has no REST rights, so no login check) and
-   for extension attributes (`-Property @{ 'extension/...' = ... }`) – only if the test instance has a suitable
-   extension item; ask me first which one.
-3. Release 0.1.0 following "Release 0.1.0" in NOTES.md (steps 1 and 2 do not block it): check CHANGELOG.md, README
-   and the manifest, and tell me what I have to do on the PowerShell Gallery and in GitHub before you tag.
+Release 0.1.0 following "Release 0.1.0" in NOTES.md. I have done the one-time setup (PowerShell Gallery API key,
+GitHub environment psgallery with the secret PSGALLERY_API_KEY). Set the release date, push, wait for green CI,
+then tag v0.1.0 and push the tag; tell me what to check afterwards.
 ```
-

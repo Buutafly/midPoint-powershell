@@ -106,8 +106,7 @@ function Invoke-midPointRestMethod {
 
 function Get-midPointErrorMessage {
     # Pulls the most useful message out of a midPoint OperationResult (or any body).
-    # TODO(verify): exact JSON shape of the OperationResult on 4.10; this searches for
-    # the first non-empty 'message' property at any depth.
+    # Searches for the first non-empty 'message' property at any depth (works for 403 / 404 on 4.10, run 6).
     [CmdletBinding()]
     [OutputType([string])]
     param(
