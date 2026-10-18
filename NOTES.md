@@ -25,7 +25,14 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
 
 ## Next steps
 
-1. Choose the scope of 0.2.0 (see "Later" and "Road to 1.0.0").
+1. 0.2.0, one branch each (see "How we work"):
+   - `feature/org-assignments`: `Get-midPointOrg`, `Get-` / `Add-` / `Set-` / `Remove-midPointOrgAssignment`
+     (shared code with the role assignments), unit and integration tests.
+   - `feature/user-extension`: `Extension` property on user objects (`$u.Extension.costCenter`), plain keys as in
+     run 8.
+   - `feature/user-password`: `Set-midPointUserPassword -Identity -NewPassword [-ForceChange]` in the style of
+     `Set-ADAccountPassword -Reset`. Creating users without a password stays possible (`-Password` is optional).
+   - OIDC / bearer token login: in a separate session, on its own branch.
 2. Open from run 3: on a manual resource the user once had no linked shadow 180 s after the assignment (not seen
    since run 6).
 
@@ -36,10 +43,10 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
    GitHub environment `psgallery` (Settings > Environments, optionally with a required reviewer) with the secret
    `PSGALLERY_API_KEY`. If the environment limits deployment branches and tags, it must allow the tags `v*`.
    Done 2026-10-18.
-3. In `CHANGELOG.md`, replace `unreleased` in `## [0.1.0] - unreleased` with the release date, and drop
-   "(once published)" in the README's Install section; commit, push, CI green.
-4. Tag and push: `git tag v0.1.0 && git push origin v0.1.0`. The user does this: a cloud session may only push its
-   working branch (tag push: HTTP 403). The release workflow tests, publishes and creates the
+3. On a branch `release/<version>`: in `CHANGELOG.md`, replace `unreleased` with the release date (and bump
+   `ModuleVersion` in the manifest for later versions); pull request, CI green, the user merges.
+4. The user tags the merge commit on `main` and pushes the tag: `git tag v0.1.0 && git push origin v0.1.0`
+   (a cloud session cannot push tags, HTTP 403). The release workflow tests, publishes and creates the
    GitHub release.
 5. Check: `Find-Module midPointTools`, then `Install-Module midPointTools -Scope CurrentUser` in a fresh session.
    A published version cannot be replaced on the Gallery (only unlisted); a fix becomes 0.1.1.
@@ -78,8 +85,19 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
   Exception: the made-up OIDs `6d707400-0000-4000-8000-00000000000n` of the example objects in `Tests/Integration/midpoint/`.
   Local settings go into `Tests/Integration/settings.local.ps1` (git-ignored).
 - Commits: author `Buutafly` (GitHub noreply address), trailer `Co-Authored-By: Claude`, no session links.
-- Branches: `main` is the default branch. Work happens on the working branch; every push also fast-forwards `main`.
-  Pushing without asking is fine.
+- Branches (from 2026-10-19): `main` changes only through pull requests; nothing is pushed to `main` directly.
+  - One branch per piece of work, named after it so the user sees what happens where: `feature/<topic>` (new
+    function), `fix/<topic>` (bug fix), `docs/<topic>` (notes, docs only), `release/<version>` (release date in
+    CHANGELOG). Several sessions can work in parallel, each on its own branch.
+  - A cloud session's own `claude/...` branch is only a scratch branch: it pushes its work to the named branch
+    (`git push origin HEAD:feature/<topic>`) and opens the pull request from there.
+  - Pull request into `main` when the work is done and `./build/Invoke-Tests.ps1` passes; CI must be green.
+    The user reviews and merges (squash merge: one commit per piece of work on `main`).
+  - Branch behind `main` or in conflict: merge `main` into the branch (no rebase, no force push), test, push.
+  - `NOTES.md`: each branch changes only the lines of its own work (status, next steps) to keep conflicts small.
+  - Tags (`v<version>`) are pushed by the user after the release pull request is merged; a cloud session cannot
+    push tags (HTTP 403).
+  - Pushing to the session's branches without asking is fine.
 - Before each push: `./build/Invoke-Tests.ps1` (lint + unit tests). CI runs the same.
 - Integration tests run only on the user's machine; they read `MIDPOINT_*` environment variables
   (see the header of `Tests/Integration/midPoint.Integration.Tests.ps1`). A cloud session cannot reach the test
@@ -101,10 +119,9 @@ possibly use the module in other test scripts.
 We are working on the PowerShell module midPointTools in the repo Buutafly/midPoint-powershell.
 First read NOTES.md and docs/rest-notes.md on the main branch – they contain the status, decisions and next steps.
 Follow "How we work" in NOTES.md (public repo: no hostnames or secrets; commits authored by Buutafly with
-Co-Authored-By: Claude, no session link; run ./build/Invoke-Tests.ps1 before every push; keep main in sync).
+Co-Authored-By: Claude, no session link; run ./build/Invoke-Tests.ps1 before every push; one branch per piece of
+work, pull request into main, never push to main directly).
 The integration tests (all green in run 8) run only on my machine; I run them and paste the output.
 
-Release 0.1.0 following "Release 0.1.0" in NOTES.md. I have done the one-time setup (PowerShell Gallery API key,
-GitHub environment psgallery with the secret PSGALLERY_API_KEY). Set the release date, push, wait for green CI,
-then tag v0.1.0 and push the tag; tell me what to check afterwards.
+<the task, e.g. one item of "Next steps" in NOTES.md; name its branch>
 ```
