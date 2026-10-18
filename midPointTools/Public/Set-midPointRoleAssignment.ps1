@@ -41,6 +41,7 @@ function Set-midPointRoleAssignment {
     .EXAMPLE
     Set-midPointRoleAssignment jack -Role 'Some Role' -AdministrativeStatus Disabled
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '', Justification = 'The shared assignment code calls ShouldProcess on this cmdlet.')]
     [CmdletBinding(SupportsShouldProcess)]
     [OutputType('midPointTools.RoleAssignment')]
     param(
@@ -67,41 +68,6 @@ function Set-midPointRoleAssignment {
     )
 
     process {
-        $activationParams = Get-midPointActivationParameter -BoundParameters $PSBoundParameters
-        # Validate the parameters before any request is sent.
-        $null = New-midPointActivationDelta -Prefix 'activation' @activationParams
-        if ($activationParams.Count -eq 0) {
-            throw [System.ArgumentException]::new('Nothing to change. Give -AdministrativeStatus, -ValidFrom, -ValidTo, -ClearValidFrom or -ClearValidTo.')
-        }
-
-        $userOid = Resolve-midPointObjectOid -InputObject $Identity -Type users
-        $roleOid = Resolve-midPointObjectOid -InputObject $Role -Type roles
-        $data = Get-midPointRoleAssignmentRaw -UserOid $userOid -RoleOid $roleOid
-        $matching = @($data.Assignments)
-        if ($null -ne $AssignmentId) {
-            $matching = @($matching | Where-Object { [long](Get-midPointContainerId $_) -eq $AssignmentId })
-        }
-
-        $label = Get-midPointIdentityLabel $Identity
-        if ($matching.Count -eq 0) {
-            $record = [System.Management.Automation.ErrorRecord]::new(
-                [System.Management.Automation.ItemNotFoundException]::new("User '$label' has no assignment of role '$(Get-midPointIdentityLabel $Role)'$(if ($null -ne $AssignmentId) { " with id $AssignmentId" })."),
-                'midPointAssignmentNotFound', [System.Management.Automation.ErrorCategory]::ObjectNotFound, $Role)
-            $PSCmdlet.ThrowTerminatingError($record)
-        }
-        if ($matching.Count -gt 1) {
-            $ids = ($matching | ForEach-Object { Get-midPointContainerId $_ }) -join ', '
-            throw [System.InvalidOperationException]::new("User '$label' has the role assigned more than once (assignment ids $ids). Select one with -AssignmentId.")
-        }
-
-        $id = Get-midPointContainerId $matching[0]
-        if ($null -eq $id) { throw [System.InvalidOperationException]::new("The assignment of role '$(Get-midPointIdentityLabel $Role)' on user '$label' has no container id.") }
-        $deltas = New-midPointActivationDelta -Prefix "assignment[$id]/activation" @activationParams
-        if (-not $PSCmdlet.ShouldProcess("$label ($userOid)", "Change assignment $id of role $(Get-midPointIdentityLabel $Role)")) { return }
-
-        Invoke-midPointModify -Type users -Oid $userOid -ItemDelta $deltas
-        if ($PassThru) {
-            Get-midPointRoleAssignment -Identity $userOid -Role $roleOid | Where-Object AssignmentId -EQ $id
-        }
+        Set-midPointAssignment -Kind Role -Cmdlet $PSCmdlet -Parameters $PSBoundParameters -Target $Role
     }
 }

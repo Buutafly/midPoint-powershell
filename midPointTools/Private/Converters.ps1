@@ -61,10 +61,12 @@ function ConvertTo-midPointRoleObject {
 }
 
 function ConvertTo-midPointAssignmentObject {
+    # -Kind Role gives Role / RoleOid, -Kind Org gives Org / OrgOid (pipeline binding to -Role / -Org).
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)] [object] $Assignment,
-        [Parameter(Mandatory)] [object] $User
+        [Parameter(Mandatory)] [object] $User,
+        [ValidateSet('Role', 'Org')] [string] $Kind = 'Role'
     )
 
     $targetRef = Get-midPointProperty $Assignment 'targetRef'
@@ -72,12 +74,12 @@ function ConvertTo-midPointAssignmentObject {
     # A reference without relation has the default relation.
     $relation = ConvertFrom-midPointQName (Get-midPointProperty $targetRef 'relation')
     if (-not $relation) { $relation = 'default' }
-    [pscustomobject]@{
-        PSTypeName           = 'midPointTools.RoleAssignment'
+    $result = [ordered]@{
+        PSTypeName           = "midPointTools.${Kind}Assignment"
         User                 = ConvertFrom-midPointPolyString (Get-midPointProperty $User 'name')
         UserOid              = [string](Get-midPointProperty $User 'oid')
-        Role                 = ConvertFrom-midPointPolyString (Get-midPointProperty $targetRef 'targetName')
-        RoleOid              = [string](Get-midPointProperty $targetRef 'oid')
+        $Kind                = ConvertFrom-midPointPolyString (Get-midPointProperty $targetRef 'targetName')
+        "${Kind}Oid"         = [string](Get-midPointProperty $targetRef 'oid')
         Relation             = $relation
         AssignmentId         = Get-midPointContainerId $Assignment
         AdministrativeStatus = Get-midPointProperty $activation 'administrativeStatus'
@@ -86,6 +88,7 @@ function ConvertTo-midPointAssignmentObject {
         ValidTo              = ConvertFrom-midPointDateTime (Get-midPointProperty $activation 'validTo')
         Raw                  = $Assignment
     }
+    [pscustomobject]$result
 }
 
 function ConvertFrom-midPointAttributeContainer {

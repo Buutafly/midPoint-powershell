@@ -34,6 +34,7 @@ function Add-midPointRoleAssignment {
     .EXAMPLE
     Add-midPointRoleAssignment jack -Role 'Some Role' -ValidTo (Get-Date).AddDays(30) -PassThru
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '', Justification = 'The shared assignment code calls ShouldProcess on this cmdlet.')]
     [CmdletBinding(SupportsShouldProcess)]
     [OutputType('midPointTools.RoleAssignment')]
     param(
@@ -59,21 +60,6 @@ function Add-midPointRoleAssignment {
     }
 
     process {
-        $userOid = Resolve-midPointObjectOid -InputObject $Identity -Type users
-
-        $targetRef = [ordered]@{ oid = $roleOid; type = 'c:RoleType' }
-        if ($Relation) { $targetRef.relation = ConvertTo-midPointRelation $Relation }
-        $assignment = [ordered]@{ targetRef = $targetRef }
-        if ($AdministrativeStatus) { Set-midPointNestedValue -Target $assignment -Path 'activation/administrativeStatus' -Value (ConvertTo-midPointActivationStatus $AdministrativeStatus) }
-        if ($PSBoundParameters.ContainsKey('ValidFrom')) { Set-midPointNestedValue -Target $assignment -Path 'activation/validFrom' -Value (ConvertTo-midPointDateTime $ValidFrom) }
-        if ($PSBoundParameters.ContainsKey('ValidTo')) { Set-midPointNestedValue -Target $assignment -Path 'activation/validTo' -Value (ConvertTo-midPointDateTime $ValidTo) }
-
-        $label = Get-midPointIdentityLabel $Identity
-        if (-not $PSCmdlet.ShouldProcess("$label ($userOid)", "Assign role $(Get-midPointIdentityLabel $Role) ($roleOid)")) { return }
-
-        Invoke-midPointModify -Type users -Oid $userOid -ItemDelta @(
-            New-midPointItemDelta -ModificationType add -Path 'assignment' -Value $assignment
-        )
-        if ($PassThru) { Get-midPointRoleAssignment -Identity $userOid -Role $roleOid }
+        Add-midPointAssignment -Kind Role -Cmdlet $PSCmdlet -Parameters $PSBoundParameters -Target $Role -TargetOid $roleOid
     }
 }
