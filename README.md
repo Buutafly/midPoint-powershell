@@ -116,6 +116,8 @@ Role assignments have their own status and validity (`Add-` / `Set-midPointRoleA
 
 ## Development
 
+Current status, decisions and next steps: [NOTES.md](NOTES.md).
+
 ```powershell
 ./build/Invoke-Tests.ps1                # PSScriptAnalyzer + Pester unit tests (as in CI)
 ./build/Invoke-Tests.ps1 -Integration   # also against a midPoint test instance, see below
