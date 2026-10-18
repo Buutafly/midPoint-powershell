@@ -15,6 +15,10 @@
 #
 # Run: Invoke-Pester ./Tests/Integration -Tag Integration -Output Detailed
 # Creates one user named MPTEST-<random> and deletes it at the end.
+# The role and the resource are never changed, only read: the test assigns the role to its own user (validTo in
+# 30 days), waits for the account on the resource (needs an inducement with a construction for that resource in the
+# role), clears the assignment's validTo and removes the assignment again. On a manual resource each run leaves
+# cases (account add, later delete) that have to be closed by hand.
 
 BeforeDiscovery {
     $script:configured = $env:MIDPOINT_URI -and $env:MIDPOINT_USER -and $env:MIDPOINT_PASSWORD
