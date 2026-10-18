@@ -34,8 +34,11 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
     }
 
     AfterAll {
-        Get-midPointUser $script:name | Remove-midPointUser -Confirm:$false
-        Disconnect-midPoint
+        # Skip the cleanup when Connect-midPoint failed, so its error is the only one shown.
+        if ($script:name -and (Get-midPointSession)) {
+            Get-midPointUser $script:name | Remove-midPointUser -Confirm:$false
+            Disconnect-midPoint
+        }
     }
 
     It 'connected (GET /self)' {

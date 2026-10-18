@@ -85,6 +85,7 @@ function Invoke-midPointRestMethod {
         }
         $text = "midPoint returned HTTP $status for $Method $Path"
         if ($message) { $text = "$text`: $message" }
+        elseif ($status -eq 401) { $text = "$text`: login rejected, check user name, password and that the user may use REST" }
         $exception = [System.Exception]::new($text)
         $exception.Data['StatusCode'] = $status
         $record = [System.Management.Automation.ErrorRecord]::new(
