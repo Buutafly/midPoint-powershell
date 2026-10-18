@@ -30,12 +30,7 @@ function Get-midPointRoleAssignment {
     )
 
     process {
-        $userOid = Resolve-midPointObjectOid -InputObject $Identity -Type users
-        $roleOid = if ($PSBoundParameters.ContainsKey('Role')) { Resolve-midPointObjectOid -InputObject $Role -Type roles } else { $null }
-
-        $data = Get-midPointRoleAssignmentRaw -UserOid $userOid -RoleOid $roleOid
-        foreach ($a in $data.Assignments) {
-            ConvertTo-midPointAssignmentObject -Assignment $a -User $data.User
-        }
+        $target = if ($PSBoundParameters.ContainsKey('Role')) { $Role } else { $null }
+        Get-midPointAssignmentList -Kind Role -Identity $Identity -Target $target
     }
 }

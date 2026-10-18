@@ -133,6 +133,10 @@ Run `Tests/Integration` with `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` s
 - [x] Shape of the OperationResult on 4xx (the module searches for the first `message`): works for 403 and 404
       (run 6: "User 'midpointtools-api' not authorized for operation ...#cancelCase on case:...").
 - [x] `password/value/clearValue` for the initial password on create (run 8: stored as `encryptedData`).
+- [x] Org assignments as member and manager (`targetRef` type `c:OrgType`), change and remove by assignment id
+      (run 11, 2026-10-18). An authorization without `<relation>` applies to all relations (midPoint 4.10 schema,
+      `AuthorizationType`). Without a read authorization on the org, `GET orgs/<oid>` gives HTTP 403
+      "Access denied" and a search by name finds nothing (run 10, API role not re-imported).
 - [x] The example API role (`Tests/Integration/midpoint/030-role-api.xml`) is enough for a full run (run 7, with
       `#cancelCase` added): filters `name startsWith "MPTEST-"`, `q:inOid`, `q:ref`, and the work item
       authorization with `assignee/special=self`.
