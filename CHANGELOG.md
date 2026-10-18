@@ -16,4 +16,5 @@ First prototype.
 - Roles: `Get-midPointRole`, `Get-` / `Add-` / `Set-` / `Remove-midPointRoleAssignment` (relation, assignment status and validity).
 - Test helpers: `Get-`, `Test-`, `Wait-midPointShadow`.
 - Cases: `Get-`, `Complete-`, `Remove-midPointCase` (e.g. the cases of a manual resource).
+- `Get-midPointResource` with the connector type (recognises manual resources).
 - Example midPoint objects for the integration tests (manual resource, test role, API user with limited rights).

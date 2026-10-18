@@ -5,8 +5,8 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
 
 ## Status
 
-- Prototype **0.1.0** of `midPointTools`, not yet released. 23 cmdlets: session, users, activation, role assignments,
-  shadows (accounts), cases. Unit tests (Pester, mocked HTTP) and PSScriptAnalyzer pass locally and in CI (Ubuntu + Windows).
+- Prototype **0.1.0** of `midPointTools`, not yet released. 24 cmdlets: session, users, activation, role assignments,
+  resources, shadows (accounts), cases. Unit tests (Pester, mocked HTTP) and PSScriptAnalyzer pass locally and in CI (Ubuntu + Windows).
 - Integration tests against a midPoint **4.10** test instance:
   - Run 1: all user and activation tests green (create, search, change, enable / disable, validity, 404 handling).
   - Run 2 (with a test role): adding the role assignment with `validTo` works. The account check hung because the
@@ -24,7 +24,8 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
 
 - Case cmdlets (`Get-` / `Complete-` / `Remove-midPointCase`) and an example test configuration
   (`Tests/Integration/midpoint/`, guide `docs/integration-tests.md`): manual test resource whose operator is the API
-  user, test role, API role limited to the test objects. The integration test completes its own cases and deletes them.
+  user, test role, API role limited to the test objects. The integration test recognises a manual resource by its
+  connector type (`Get-midPointResource`), completes its own cases and deletes them.
   Not yet run against the instance.
 
 ## Next steps

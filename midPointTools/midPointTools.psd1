@@ -27,6 +27,7 @@
         'Add-midPointRoleAssignment'
         'Set-midPointRoleAssignment'
         'Remove-midPointRoleAssignment'
+        'Get-midPointResource'
         'Get-midPointShadow'
         'Test-midPointShadow'
         'Wait-midPointShadow'

@@ -96,6 +96,7 @@ Get-midPointCase -Resource 'Manual Resource' -Account jdoe -State Open | Complet
 | Users | `Get-midPointUser`, `New-midPointUser`, `Set-midPointUser`, `Remove-midPointUser` |
 | Activation | `Enable-midPointUser`, `Disable-midPointUser`, `Unlock-midPointUser`, `Get-midPointUserActivation`, `Set-midPointUserActivation` |
 | Roles | `Get-midPointRole`, `Get-midPointRoleAssignment`, `Add-midPointRoleAssignment`, `Set-midPointRoleAssignment`, `Remove-midPointRoleAssignment` |
+| Resources | `Get-midPointResource` |
 | Accounts | `Get-midPointShadow`, `Test-midPointShadow`, `Wait-midPointShadow` |
 | Cases | `Get-midPointCase`, `Complete-midPointCase`, `Remove-midPointCase` |
 

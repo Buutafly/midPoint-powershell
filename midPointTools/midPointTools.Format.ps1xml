@@ -126,6 +126,26 @@
       </TableControl>
     </View>
     <View>
+      <Name>midPointTools.Resource</Name>
+      <ViewSelectedBy><TypeName>midPointTools.Resource</TypeName></ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader><Label>Name</Label></TableColumnHeader>
+          <TableColumnHeader><Label>ConnectorType</Label></TableColumnHeader>
+          <TableColumnHeader><Label>Oid</Label></TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem><PropertyName>Name</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>ConnectorType</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Oid</PropertyName></TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+    <View>
       <Name>midPointTools.Case</Name>
       <ViewSelectedBy><TypeName>midPointTools.Case</TypeName></ViewSelectedBy>
       <TableControl>

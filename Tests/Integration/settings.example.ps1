@@ -7,5 +7,4 @@ $env:MIDPOINT_PASSWORD = ''          # never commit a password
 
 # With the example objects from Tests/Integration/midpoint (docs/integration-tests.md):
 $env:MIDPOINT_TEST_ROLE = 'midPointTools Test Role'
-$env:MIDPOINT_TEST_RESOURCE = 'midPointTools Test Resource'
-$env:MIDPOINT_TEST_RESOURCE_MANUAL = '1'
+$env:MIDPOINT_TEST_RESOURCE = 'midPointTools Test Resource'   # a manual resource is detected by its connector

@@ -6,7 +6,7 @@
   - use the REST API and read itself (Connect-midPoint reads GET /self),
   - read, create, change and delete users whose name starts with MPTEST-,
   - assign and unassign only the test role, and read it,
-  - read the test resource (by name, without contacting the connector),
+  - read the test resource (by name, without contacting the connector) and the connectors (connector type),
   - read, create, change and delete shadows (accounts) on the test resource,
   - read and delete the cases of the test resource, and complete the work items assigned to it.
   Nothing else on the instance is visible or changeable for it.
@@ -92,6 +92,15 @@
                     <q:value>6d707400-0000-4000-8000-000000000001</q:value>
                 </q:inOid>
             </filter>
+        </object>
+    </authorization>
+
+    <authorization>
+        <!-- The tests recognise a manual resource by the connectorType of its connector. -->
+        <name>connectors-read</name>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#read</action>
+        <object>
+            <type>ConnectorType</type>
         </object>
     </authorization>
 

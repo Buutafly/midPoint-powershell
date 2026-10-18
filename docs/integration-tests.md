@@ -25,7 +25,7 @@ keep them as they are.
 - use the REST API and read itself (`Connect-midPoint` calls `GET /self`),
 - read, create, change and delete users whose name starts with `MPTEST-`,
 - assign and unassign the test role (and no other role), read the test role,
-- read the test resource,
+- read the test resource, and read connectors (to recognise a manual resource by its connector type),
 - read, create, change and delete shadows (accounts) on the test resource,
 - read and delete the cases of the test resource, and complete the work items assigned to the API user.
 
@@ -87,6 +87,6 @@ Nothing else is changed: the role, the resource and all other objects are only r
 
 The tests also run against an existing role and resource: set `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` to
 their names. The role must give an account on that resource. Keep in mind that midPoint really provisions: with a real
-connector the test creates and deletes an account `MPTEST-<random>` in the target system. Set
-`MIDPOINT_TEST_RESOURCE_MANUAL=1` only for a manual resource whose operator is the test user, because the test
-completes the cases of its account.
+connector the test creates and deletes an account `MPTEST-<random>` in the target system and only waits for it.
+The test recognises a manual (or semi-manual) resource by its connector type `ManualConnector` and then completes
+the cases of its account, which only works when the test user is the resource's operator.

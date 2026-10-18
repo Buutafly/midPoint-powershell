@@ -11,9 +11,6 @@
 #   MIDPOINT_TIMEOUT_SEC           request timeout in seconds (default 30 here)
 #   MIDPOINT_TEST_ROLE             a role name to assign / unassign
 #   MIDPOINT_TEST_RESOURCE         a resource the role provisions to (needs MIDPOINT_TEST_ROLE)
-#   MIDPOINT_TEST_RESOURCE_MANUAL = 1   the resource is a manual resource whose operator is MIDPOINT_USER:
-#                                       the test completes the cases of its own account like an operator
-#                                       and deletes them at the end
 #   MIDPOINT_SHADOW_TIMEOUT_SEC    how long to wait for the account (default 180)
 #
 # Run: Invoke-Pester ./Tests/Integration -Tag Integration -Output Detailed
@@ -21,13 +18,14 @@
 # The role and the resource are never changed, only read: the test assigns the role to its own user (validTo in
 # 30 days), waits for the account on the resource (needs an inducement with a construction for that resource in the
 # role), clears the assignment's validTo, removes the assignment and waits until the account is gone.
+# On a manual resource (connector type ManualConnector) the account changes are cases: the test then completes the
+# cases of its own account like an operator (MIDPOINT_USER must be the resource's operator) and deletes them at the end.
 # With a real connector this creates and deletes an account MPTEST-<random> in the target system.
 
 BeforeDiscovery {
     $script:configured = $env:MIDPOINT_URI -and $env:MIDPOINT_USER -and $env:MIDPOINT_PASSWORD
     $script:hasRole = [bool]$env:MIDPOINT_TEST_ROLE
     $script:hasResource = $script:hasRole -and [bool]$env:MIDPOINT_TEST_RESOURCE
-    $script:isManual = $script:hasResource -and $env:MIDPOINT_TEST_RESOURCE_MANUAL -eq '1'
 }
 
 Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
@@ -40,7 +38,14 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
         # Test instances often run on http; its only warning (clear-text password) is noise here.
         Connect-midPoint -Uri $env:MIDPOINT_URI -Credential $cred -SkipCertificateCheck:($env:MIDPOINT_SKIP_CERT_CHECK -eq '1') -TimeoutSec $timeout -WarningAction SilentlyContinue
         $script:name = 'MPTEST-{0}' -f (Get-Random -Minimum 100000 -Maximum 999999)
-        $script:manual = $env:MIDPOINT_TEST_RESOURCE_MANUAL -eq '1' -and [bool]$env:MIDPOINT_TEST_RESOURCE
+        $script:manual = $false
+        if ($env:MIDPOINT_TEST_ROLE -and $env:MIDPOINT_TEST_RESOURCE) {
+            $resource = Get-midPointResource $env:MIDPOINT_TEST_RESOURCE
+            if (-not $resource) { throw "Test resource '$env:MIDPOINT_TEST_RESOURCE' not found (or not readable for $env:MIDPOINT_USER)." }
+            if (-not $resource.ConnectorType) { Write-Warning "The connector of '$($resource.Name)' is not readable for $env:MIDPOINT_USER; treating it as a resource with a real connector." }
+            $script:manual = $resource.IsManual
+            Write-Host "Test resource '$($resource.Name)': connector $($resource.ConnectorType)$(if ($manual) { ' - manual resource, the test completes the cases of its account' })"
+        }
         $script:wait = if ($env:MIDPOINT_SHADOW_TIMEOUT_SEC) { [int]$env:MIDPOINT_SHADOW_TIMEOUT_SEC } else { 180 }
 
         function Complete-TestCase {
@@ -156,7 +161,8 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
             Test-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE -AllowPending:$manual -NoFetch:$manual | Should -BeTrue
         }
 
-        It 'completes the case and the account exists (manual resource)' -Skip:(-not $isManual) {
+        It 'completes the case and the account exists (manual resource)' -Skip:(-not $hasResource) {
+            if (-not $manual) { Set-ItResult -Skipped -Because 'the test resource has a real connector'; return }
             $c = @(Get-midPointCase -Resource $env:MIDPOINT_TEST_RESOURCE -Account $name -State Open)
             Write-Host "Open case(s): $(($c | ForEach-Object { "$($_.Name) [$($_.State), work items: $($_.OpenWorkItems), assignee: $($_.WorkItem.Assignee -join ', ')]" }) -join '; ')"
             $c.Count | Should -BeGreaterThan 0

@@ -155,3 +155,25 @@ function ConvertTo-midPointShadowObject {
         Raw                  = $InputObject
     }
 }
+
+function ConvertTo-midPointResourceObject {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] [object] $InputObject,
+        [object] $Connector
+    )
+
+    # connectorType is the connector class: 'ManualConnector' for midPoint's built-in manual connector,
+    # e.g. 'com.evolveum.polygon.connector.csv.CsvConnector' for ConnId connectors.
+    $connectorType = [string](Get-midPointProperty $Connector 'connectorType')
+    [pscustomobject]@{
+        PSTypeName    = 'midPointTools.Resource'
+        Oid           = [string](Get-midPointProperty $InputObject 'oid')
+        Name          = ConvertFrom-midPointPolyString (Get-midPointProperty $InputObject 'name')
+        Description   = Get-midPointProperty $InputObject 'description'
+        ConnectorType = if ($connectorType) { $connectorType } else { $null }
+        ConnectorOid  = [string](Get-midPointProperty (Get-midPointProperty $InputObject 'connectorRef') 'oid')
+        IsManual      = $connectorType -like '*ManualConnector'
+        Raw           = $InputObject
+    }
+}
