@@ -60,6 +60,23 @@ function ConvertTo-midPointRoleObject {
     }
 }
 
+function ConvertTo-midPointOrgObject {
+    [CmdletBinding()]
+    param([Parameter(Mandatory, ValueFromPipeline)] [object] $InputObject)
+
+    process {
+        [pscustomobject]@{
+            PSTypeName  = 'midPointTools.Org'
+            Oid         = [string](Get-midPointProperty $InputObject 'oid')
+            Name        = ConvertFrom-midPointPolyString (Get-midPointProperty $InputObject 'name')
+            DisplayName = ConvertFrom-midPointPolyString (Get-midPointProperty $InputObject 'displayName')
+            Identifier  = Get-midPointProperty $InputObject 'identifier'
+            Description = Get-midPointProperty $InputObject 'description'
+            Raw         = $InputObject
+        }
+    }
+}
+
 function ConvertTo-midPointAssignmentObject {
     # -Kind Role gives Role / RoleOid, -Kind Org gives Org / OrgOid (pipeline binding to -Role / -Org).
     [CmdletBinding()]

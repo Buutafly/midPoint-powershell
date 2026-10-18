@@ -133,6 +133,8 @@ Run `Tests/Integration` with `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` s
 - [x] Shape of the OperationResult on 4xx (the module searches for the first `message`): works for 403 and 404
       (run 6: "User 'midpointtools-api' not authorized for operation ...#cancelCase on case:...").
 - [x] `password/value/clearValue` for the initial password on create (run 8: stored as `encryptedData`).
+- [ ] Org assignments as member and manager (`targetRef` type `c:OrgType`), with the `relation` items in the
+      example API role's `test-org-assign` authorization; the user gets `parentOrgRef`.
 - [x] The example API role (`Tests/Integration/midpoint/030-role-api.xml`) is enough for a full run (run 7, with
       `#cancelCase` added): filters `name startsWith "MPTEST-"`, `q:inOid`, `q:ref`, and the work item
       authorization with `assignee/special=self`.

@@ -3,7 +3,7 @@
 PowerShell cmdlets for the [Evolveum midPoint](https://evolveum.com/midpoint/) REST API.
 
 midPointTools gives security admins verb-noun cmdlets in the style of the ActiveDirectory and Az modules:
-connect once, then create, change, enable / disable and delete users, manage role assignments with their
+connect once, then create, change, enable / disable and delete users, manage role and org assignments with their
 validity, and check the accounts a user has on the resources. The account checks are also meant to make test scripts
 for midPoint configurations short.
 
@@ -52,6 +52,10 @@ Get-midPointRoleAssignment jdoe
 Set-midPointRoleAssignment jdoe -Role 'Some Role' -ClearValidTo
 Remove-midPointRoleAssignment jdoe -Role 'Some Role'
 
+Add-midPointOrgAssignment jdoe -Org 'Some Org'                    # member
+Add-midPointOrgAssignment jdoe -Org 'Some Org' -Relation manager
+Get-midPointOrgAssignment jdoe
+
 Get-midPointShadow jdoe -Resource 'Some Resource'
 Remove-midPointUser jdoe
 ```
@@ -97,6 +101,7 @@ Get-midPointCase -Resource 'Manual Resource' -Account jdoe -State Open | Complet
 | Users | `Get-midPointUser`, `New-midPointUser`, `Set-midPointUser`, `Remove-midPointUser` |
 | Activation | `Enable-midPointUser`, `Disable-midPointUser`, `Unlock-midPointUser`, `Get-midPointUserActivation`, `Set-midPointUserActivation` |
 | Roles | `Get-midPointRole`, `Get-midPointRoleAssignment`, `Add-midPointRoleAssignment`, `Set-midPointRoleAssignment`, `Remove-midPointRoleAssignment` |
+| Orgs | `Get-midPointOrg`, `Get-midPointOrgAssignment`, `Add-midPointOrgAssignment`, `Set-midPointOrgAssignment`, `Remove-midPointOrgAssignment` |
 | Resources | `Get-midPointResource` |
 | Accounts | `Get-midPointShadow`, `Test-midPointShadow`, `Wait-midPointShadow` |
 | Cases | `Get-midPointCase`, `Complete-midPointCase`, `Remove-midPointCase` |
@@ -111,7 +116,7 @@ midPoint decides whether a user or an assignment is active from three values in 
 
 `Set-midPointUserActivation -AdministrativeStatus None` removes the explicit status, so the dates decide again.
 `Enable-midPointUser` warns when a user stays effectively disabled, e.g. because `ValidTo` is in the past.
-Role assignments have their own status and validity (`Add-` / `Set-midPointRoleAssignment`).
+Role and org assignments have their own status and validity (`Add-` / `Set-midPointRoleAssignment`, `...OrgAssignment`).
 
 ## Authentication and security
 

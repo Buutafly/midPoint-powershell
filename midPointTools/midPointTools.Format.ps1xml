@@ -96,6 +96,56 @@
       </TableControl>
     </View>
     <View>
+      <Name>midPointTools.Org</Name>
+      <ViewSelectedBy><TypeName>midPointTools.Org</TypeName></ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader><Label>Name</Label></TableColumnHeader>
+          <TableColumnHeader><Label>DisplayName</Label></TableColumnHeader>
+          <TableColumnHeader><Label>Identifier</Label></TableColumnHeader>
+          <TableColumnHeader><Label>Oid</Label></TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem><PropertyName>Name</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>DisplayName</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Identifier</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Oid</PropertyName></TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+    <View>
+      <Name>midPointTools.OrgAssignment</Name>
+      <ViewSelectedBy><TypeName>midPointTools.OrgAssignment</TypeName></ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader><Label>User</Label></TableColumnHeader>
+          <TableColumnHeader><Label>Org</Label></TableColumnHeader>
+          <TableColumnHeader><Label>Relation</Label></TableColumnHeader>
+          <TableColumnHeader><Label>Id</Label></TableColumnHeader>
+          <TableColumnHeader><Label>EffectiveStatus</Label></TableColumnHeader>
+          <TableColumnHeader><Label>ValidFrom</Label></TableColumnHeader>
+          <TableColumnHeader><Label>ValidTo</Label></TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem><PropertyName>User</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Org</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Relation</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>AssignmentId</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>EffectiveStatus</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>ValidFrom</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>ValidTo</PropertyName></TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+    <View>
       <Name>midPointTools.Shadow</Name>
       <ViewSelectedBy><TypeName>midPointTools.Shadow</TypeName></ViewSelectedBy>
       <TableControl>
