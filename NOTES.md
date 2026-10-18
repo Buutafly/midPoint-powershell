@@ -38,8 +38,28 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
 3. Optionally also run against a resource with a real connector (shadow attribute format).
 4. Not covered by any test yet: extension attributes (`-Property @{ 'extension/...' = ... }`) and the initial
    password on `New-midPointUser`. Add integration tests if needed.
-5. Release: PowerShell Gallery account, GitHub environment `psgallery` with secret `PSGALLERY_API_KEY`,
-   update `CHANGELOG.md`, push tag `v0.1.0`.
+5. Release 0.1.0, see "Release 0.1.0" below.
+
+## Release 0.1.0
+
+1. Integration run green on 4.10 (next steps 1 and 2). Items that cannot be confirmed yet stay in the TODO list
+   of `docs/rest-notes.md`; they are fine for 0.1.0 as long as no test fails.
+2. One-time setup: PowerShell Gallery account, API key scoped to `midPointTools` (push new packages and versions),
+   GitHub environment `psgallery` (Settings > Environments, optionally with a required reviewer) with the secret
+   `PSGALLERY_API_KEY`.
+3. In `CHANGELOG.md`, replace `unreleased` in `## [0.1.0] - unreleased` with the release date; commit, push, CI green.
+4. Tag and push: `git tag v0.1.0 && git push origin v0.1.0`. The release workflow tests, publishes and creates the
+   GitHub release.
+5. Check: `Find-Module midPointTools`, then `Install-Module midPointTools -Scope CurrentUser` in a fresh session.
+   A published version cannot be replaced on the Gallery (only unlisted); a fix becomes 0.1.1.
+
+## Road to 1.0.0
+
+- All items in the TODO list of `docs/rest-notes.md` confirmed; integration tests green on 4.10 and on 4.8 (the
+  minimum the README claims), also against a resource with a real connector.
+- Integration tests for extension attributes and the initial password.
+- Output objects and parameter sets stable over a few 0.x releases of real use.
+- Decide whether bearer token / OIDC login comes before 1.0 or can be added later without breaking changes.
 
 ## Decisions
 
