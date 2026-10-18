@@ -11,6 +11,8 @@ $script:midPointTypeMap = @{
 
 function Get-midPointProperty {
     # Safe property read on a PSCustomObject (returns $null when missing).
+    # midPoint sometimes qualifies keys with a namespace prefix, e.g. a reference with a filter comes as
+    # { "t:oid": ..., "t:type": ..., "filter": ... }; 'oid' then finds 't:oid'.
     [CmdletBinding()]
     param(
         [AllowNull()] [object] $InputObject,
@@ -18,6 +20,10 @@ function Get-midPointProperty {
     )
     if ($null -eq $InputObject) { return $null }
     $p = $InputObject.PSObject.Properties[$Name]
+    if (-not $p -and $InputObject -is [System.Management.Automation.PSCustomObject]) {
+        $suffix = ':' + $Name
+        $p = $InputObject.PSObject.Properties | Where-Object { $_.Name.EndsWith($suffix) -and -not $_.Name.StartsWith('@') } | Select-Object -First 1
+    }
     if ($p) { $p.Value }
 }
 

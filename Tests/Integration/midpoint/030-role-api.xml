@@ -122,9 +122,11 @@
     </authorization>
 
     <authorization>
+        <!-- Deleting a case also needs cancelCase (midPoint 4.10 checks it on DELETE cases/{oid}). -->
         <name>test-cases</name>
         <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#read</action>
         <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#delete</action>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#cancelCase</action>
         <object>
             <type>CaseType</type>
             <filter>

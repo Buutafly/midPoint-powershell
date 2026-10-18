@@ -38,11 +38,25 @@ Reference: [midPoint REST API](https://docs.evolveum.com/midpoint/reference/inte
   Without a read authorization, `GET /self` passes the REST check and then fails with **HTTP 500, body
   `Access denied`** (`AuthorizationException` in `DataAccessProcessor.applyReadConstraints`), not with 403.
 - Wrong password: HTTP 401 without a body.
+- Run 4 (2026-10-18, real resource with a ConnId connector, dedicated REST user): all integration tests green.
+  `Set-midPointRoleAssignment` with `assignment[id]/...`, `Remove-midPointRoleAssignment` deleting by `{ "@id": n }`,
+  shadow read with attributes (fetch), account disabled (not deleted) after unassigning on that resource.
 - An item path with a container id is written `assignment[3]/activation/validTo` (no `/` before `[`); with
   `assignment/[3]/...` midPoint answers HTTP 500 "doesn't contain definition for path assignment//[3]/..." (run 3).
 - Container ids (e.g. of assignments) are `@id` in JSON, not `id` (run 3: reading `id` gave an empty id and
   `PATCH` failed with HTTP 400 "For input string: \"\""). The module reads `@id` (falls back to `id`) and deletes
   assignments with `{ "@id": n }`.
+- A reference that carries a filter (e.g. a resource's `connectorRef` imported with a filter) comes with prefixed
+  keys: `{ "t:oid": "...", "t:relation": "org:default", "t:type": "c:ConnectorType", "filter": { ... } }` (run 6).
+  `Get-midPointProperty` therefore finds `oid` also as `<prefix>:oid`. Before that, `Get-midPointResource` saw no
+  connector OID and never read the connector.
+- Run 6 (manual resource, as `midpointtools-api`): case search with `objectRef matches (oid = "...")`, completing
+  the work item through REST with outcome `approve` (shadow exists afterwards, `refreshOnRead`), the delete case
+  after unassigning (account gone). Deleting a case (`DELETE cases/{oid}`) needs `authorization-model-3#cancelCase`
+  in addition to `#delete`, else HTTP 403.
+- Run 7 (2026-10-18, as `midpointtools-api` with the example objects): **all green**. Connector type
+  `ManualConnector` read through `GET /connectors/{oid}` (the `connectors-read` authorization is enough), leftover
+  cases deleted, the full case flow and the cleanup of the run's own cases work.
 - Run 3 on a manual resource: 180 s after assigning the role, the user had no linked shadow on that resource
   (neither live nor pending). Still to be analysed.
 
@@ -92,20 +106,20 @@ authorization (`AUTZ.n> Evaluating authorization ...`) with its decision.
 
 Run `Tests/Integration` with `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` set for the remaining items.
 
-- [ ] Delete of an assignment by `{ "@id": 3 }` only (`Remove-midPointRoleAssignment`).
 - [ ] Reference type `c:RoleType` and relation `org:manager` prefixes are resolved in JSON.
 - [ ] Extension items via `-Property @{ 'extension/costCenter' = ... }` without namespace.
 - [ ] `resolveNames` fills `targetRef.targetName` for assignments and `resourceRef.targetName` for shadows.
-- [ ] Shape of shadow `attributes` in JSON (keys `ri:mail` or `mail`; values as arrays).
+- [ ] Raw shape of shadow `attributes` in JSON (prefix, arrays); the module's flattened keys already work (run 4).
 - [ ] Dead shadows are still in `linkRef` (relation `related`) and carry `dead: true`.
-- [ ] Pending operations on shadows of a manual resource: `pendingOperation[].executionStatus`, `delta.changeType`,
-      `delta.objectToAdd.attributes`, and `exists: false` until the case is closed.
-- [ ] Shape of the OperationResult on 4xx (the module searches for the first `message`).
+- [x] Pending operations on shadows of a manual resource: `pendingOperation[].executionStatus`, `delta.changeType`,
+      `delta.objectToAdd.attributes`, and `exists: false` until the case is closed (run 7: `exists=False`,
+      pending `add` with the requested `mail` / `username`).
+- [x] Shape of the OperationResult on 4xx (the module searches for the first `message`): works for 403 and 404
+      (run 6: "User 'midpointtools-api' not authorized for operation ...#cancelCase on case:...").
 - [ ] `password/value/clearValue` for the initial password on create.
-- [ ] Case search with `objectRef matches (oid = "...")`; completing a manual case's work item with outcome `approve`
-      makes the shadow exist (`refreshOnRead`), and the delete case removes it.
-- [ ] The example API role (`Tests/Integration/midpoint/030-role-api.xml`) is enough for a full run: filters
-      `name startsWith "MPTEST-"`, `q:inOid`, `q:ref`, and the work item authorization with `assignee/special=self`.
+- [x] The example API role (`Tests/Integration/midpoint/030-role-api.xml`) is enough for a full run (run 7, with
+      `#cancelCase` added): filters `name startsWith "MPTEST-"`, `q:inOid`, `q:ref`, and the work item
+      authorization with `assignee/special=self`.
 
 ## Not in scope (yet)
 

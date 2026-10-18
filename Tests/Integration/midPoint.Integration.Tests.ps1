@@ -38,32 +38,89 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
         # Test instances often run on http; its only warning (clear-text password) is noise here.
         Connect-midPoint -Uri $env:MIDPOINT_URI -Credential $cred -SkipCertificateCheck:($env:MIDPOINT_SKIP_CERT_CHECK -eq '1') -TimeoutSec $timeout -WarningAction SilentlyContinue
         $script:name = 'MPTEST-{0}' -f (Get-Random -Minimum 100000 -Maximum 999999)
-        $script:manual = $false
-        if ($env:MIDPOINT_TEST_ROLE -and $env:MIDPOINT_TEST_RESOURCE) {
-            $resource = Get-midPointResource $env:MIDPOINT_TEST_RESOURCE
-            if (-not $resource) { throw "Test resource '$env:MIDPOINT_TEST_RESOURCE' not found (or not readable for $env:MIDPOINT_USER)." }
-            if (-not $resource.ConnectorType) { Write-Warning "The connector of '$($resource.Name)' is not readable for $env:MIDPOINT_USER; treating it as a resource with a real connector." }
-            $script:manual = $resource.IsManual
-            Write-Host "Test resource '$($resource.Name)': connector $($resource.ConnectorType)$(if ($manual) { ' - manual resource, the test completes the cases of its account' })"
-        }
         $script:wait = if ($env:MIDPOINT_SHADOW_TIMEOUT_SEC) { [int]$env:MIDPOINT_SHADOW_TIMEOUT_SEC } else { 180 }
+
+        function Get-TestCase {
+            # Cases of one test account on the test resource; with -AnyTestAccount those of every MPTEST- account.
+            param([string] $Account = $script:name, [switch] $AnyTestAccount, [string] $State = 'All')
+            $pattern = if ($AnyTestAccount) { "*'MPTEST-*'*" } else { "*'$([WildcardPattern]::Escape($Account))'*" }
+            @(Get-midPointCase -Resource $env:MIDPOINT_TEST_RESOURCE -State $State) | Where-Object Name -Like $pattern
+        }
 
         function Complete-TestCase {
             # Completes the open cases of the test account on the manual resource. Returns how many there were.
-            param([string] $Comment)
-            $open = @(Get-midPointCase -Resource $env:MIDPOINT_TEST_RESOURCE -Account $script:name -State Open)
+            param([string] $Comment, [string] $Account = $script:name, [switch] $AnyTestAccount)
+            $open = @(Get-TestCase -Account $Account -AnyTestAccount:$AnyTestAccount -State Open)
             $open | Complete-midPointCase -Comment $Comment
             $open.Count
         }
 
+        function Remove-TestCase {
+            # Deletes the (closed) cases of the test account. Returns how many there were.
+            param([string] $Account = $script:name, [switch] $AnyTestAccount)
+            $cases = @(Get-TestCase -Account $Account -AnyTestAccount:$AnyTestAccount)
+            # Reading the shadows lets midPoint record the closed cases (refreshOnRead) before they are deleted.
+            foreach ($oid in @($cases.TargetOid | Where-Object { $_ } | Select-Object -Unique)) {
+                try { $null = & (Get-Module midPointTools) { param($o) Get-midPointObjectByOid -Type shadows -Oid $o } $oid } catch { Write-Verbose "Shadow $oid not readable: $_" }
+            }
+            $cases | Remove-midPointCase -Confirm:$false
+            $cases.Count
+        }
+
         function Wait-TestCase {
             # Waits for an open case of the test account (midPoint opens it while processing the change).
-            $deadline = [datetime]::UtcNow.AddSeconds($script:wait)
+            param([int] $TimeoutSeconds = $script:wait)
+            $deadline = [datetime]::UtcNow.AddSeconds($TimeoutSeconds)
             while ([datetime]::UtcNow -lt $deadline) {
-                if (@(Get-midPointCase -Resource $env:MIDPOINT_TEST_RESOURCE -Account $script:name -State Open).Count -gt 0) { return $true }
+                if (@(Get-TestCase -State Open).Count -gt 0) { return $true }
                 Start-Sleep -Seconds 2
             }
             $false
+        }
+
+        $script:manual = $false
+        $script:connectorUnknown = $false
+        if ($env:MIDPOINT_TEST_ROLE -and $env:MIDPOINT_TEST_RESOURCE) {
+            # -Verbose only to catch the reason when the connector is not readable.
+            $out = @(Get-midPointResource $env:MIDPOINT_TEST_RESOURCE -Verbose 4>&1)
+            $resource = $out | Where-Object { $_ -isnot [System.Management.Automation.VerboseRecord] }
+            if (-not $resource) { throw "Test resource '$env:MIDPOINT_TEST_RESOURCE' not found (or not readable for $env:MIDPOINT_USER)." }
+            if (-not $resource.ConnectorType) {
+                $script:connectorUnknown = $true
+                $reason = ($out | Where-Object { $_ -is [System.Management.Automation.VerboseRecord] -and $_.Message -like 'Connector * is not readable*' }).Message
+                Write-Warning "The connector of '$($resource.Name)' is not readable for $env:MIDPOINT_USER$(if ($reason) { ": $reason" } elseif (-not $resource.ConnectorOid) { ": no connector OID in the resource's connectorRef: $(ConvertTo-Json -InputObject $resource.Raw.connectorRef -Depth 5 -Compress)" })"
+                if ($resource.ConnectorOid) {
+                    # Probe: the same read without the connector's schema (a large XSD).
+                    try {
+                        $probe = & (Get-Module midPointTools) { param($o) Invoke-midPointRestMethod -Method GET -Path "connectors/$o" -Query @{ exclude = 'schema' } } $resource.ConnectorOid
+                        $type = (& (Get-Module midPointTools) { param($b) Get-midPointObjectFromResponse -Body $b } $probe.Body).connectorType
+                        Write-Warning "GET connectors/<oid>?exclude=schema works (connectorType '$type'): the schema in the response is the problem."
+                    }
+                    catch { Write-Warning "GET connectors/<oid>?exclude=schema fails as well: $($_.Exception.Message)" }
+                }
+                Write-Warning 'The test decides by the account: pending with an open case means a manual resource.'
+            }
+            $script:manual = $resource.IsManual
+            Write-Host "Test resource '$($resource.Name)': connector $($resource.ConnectorType)$(if ($manual) { ' - manual resource, the test completes the cases of its account' })"
+        }
+
+        # Leftovers of an aborted run (Ctrl+C skips AfterAll): MPTEST- users and the cases of their accounts.
+        $stale = @(Get-midPointUser -Filter 'name startsWith "MPTEST-"')
+        if ($stale.Count -gt 0 -or $env:MIDPOINT_TEST_RESOURCE) {
+            try {
+                $completed = 0
+                if ($env:MIDPOINT_TEST_RESOURCE) { $completed += Complete-TestCase -AnyTestAccount -Comment 'midPointTools integration test: leftover' }
+                $stale | Remove-midPointUser -Confirm:$false
+                if ($env:MIDPOINT_TEST_RESOURCE) {
+                    # Deleting a user may open a case to delete its account.
+                    $completed += Complete-TestCase -AnyTestAccount -Comment 'midPointTools integration test: leftover'
+                    $removed = Remove-TestCase -AnyTestAccount
+                }
+                if ($stale.Count -or $completed -or $removed) {
+                    Write-Host "Leftovers of an earlier run: deleted $($stale.Count) user(s)$(if ($stale.Count) { " ($($stale.Name -join ', '))" }), completed $completed and deleted $removed case(s)."
+                }
+            }
+            catch { Write-Warning "Leftovers of an earlier run could not be cleared: $_" }
         }
     }
 
@@ -80,13 +137,8 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
                 try {
                     # Deleting the user may open a case to delete the account.
                     $null = Complete-TestCase -Comment 'midPointTools integration test cleanup'
-                    $cases = @(Get-midPointCase -Resource $env:MIDPOINT_TEST_RESOURCE -Account $script:name)
-                    # Reading the shadows lets midPoint record the closed cases (refreshOnRead) before they are deleted.
-                    foreach ($oid in @($cases.TargetOid | Where-Object { $_ } | Select-Object -Unique)) {
-                        try { $null = & (Get-Module midPointTools) { param($o) Get-midPointObjectByOid -Type shadows -Oid $o } $oid } catch { Write-Verbose "Shadow $oid not readable: $_" }
-                    }
-                    $cases | Remove-midPointCase -Confirm:$false
-                    Write-Host "Cleanup: deleted $($cases.Count) case(s) of $script:name."
+                    $count = Remove-TestCase
+                    Write-Host "Cleanup: deleted $count case(s) of $script:name."
                 }
                 catch { Write-Warning "Cleanup: cases of $script:name could not be cleared: $_" }
             }
@@ -149,7 +201,19 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
         It 'shows the account on the resource' -Skip:(-not $hasResource) {
             Write-Host "Waiting up to $wait s for the account on '$env:MIDPOINT_TEST_RESOURCE'$(if ($manual) { ' (manual resource: a pending account counts)' })..."
 
-            $s = Wait-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE -TimeoutSeconds $wait -AllowPending:$manual -NoFetch:$manual
+            # With an unreadable connector a pending account is accepted too; an open case for it marks a manual resource.
+            $detect = $manual -or $connectorUnknown
+            $s = Wait-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE -TimeoutSeconds $wait -AllowPending:$detect -NoFetch:$detect
+            if ($connectorUnknown -and -not $manual) {
+                if ($s.IsPending -and -not $s.Exists -and (Wait-TestCase -TimeoutSeconds 10)) {
+                    $script:manual = $true
+                    Write-Host 'The account is pending with an open case: treating the test resource as manual.'
+                }
+                else {
+                    # A real connector: wait for the account itself and read it from the resource.
+                    $s = Wait-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE -TimeoutSeconds $wait
+                }
+            }
             Write-Host "Found shadow $($s.Oid): exists=$($s.Exists), pending=$($s.PendingOperation -join ','), attributes: $(($s.Attributes.Keys | Sort-Object) -join ', ')"
             if ($manual) {
                 ($s.Exists -or $s.IsPending) | Should -BeTrue
@@ -163,7 +227,7 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
 
         It 'completes the case and the account exists (manual resource)' -Skip:(-not $hasResource) {
             if (-not $manual) { Set-ItResult -Skipped -Because 'the test resource has a real connector'; return }
-            $c = @(Get-midPointCase -Resource $env:MIDPOINT_TEST_RESOURCE -Account $name -State Open)
+            $c = @(Get-TestCase -State Open)
             Write-Host "Open case(s): $(($c | ForEach-Object { "$($_.Name) [$($_.State), work items: $($_.OpenWorkItems), assignee: $($_.WorkItem.Assignee -join ', ')]" }) -join '; ')"
             $c.Count | Should -BeGreaterThan 0
             $c | Complete-midPointCase -Comment 'midPointTools integration test'
@@ -171,7 +235,7 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
             $s = Wait-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE -TimeoutSeconds $wait
             Write-Host "Shadow after the case: exists=$($s.Exists), pending=$($s.PendingOperation -join ','), attributes: $(($s.Attributes.GetEnumerator() | Sort-Object Key | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ', ')"
             $s.Exists | Should -BeTrue
-            @(Get-midPointCase -Resource $env:MIDPOINT_TEST_RESOURCE -Account $name -State Open).Count | Should -Be 0
+            @(Get-TestCase -State Open).Count | Should -Be 0
         }
 
         It 'changes the assignment validity' {

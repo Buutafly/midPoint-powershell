@@ -6,44 +6,30 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
 ## Status
 
 - Prototype **0.1.0** of `midPointTools`, not yet released. 24 cmdlets: session, users, activation, role assignments,
-  resources, shadows (accounts), cases. Unit tests (Pester, mocked HTTP) and PSScriptAnalyzer pass locally and in CI (Ubuntu + Windows).
-- Integration tests against a midPoint **4.10** test instance:
-  - Run 1: all user and activation tests green (create, search, change, enable / disable, validity, 404 handling).
-  - Run 2 (with a test role): adding the role assignment with `validTo` works. The account check hung because the
-    test resource is a **manual resource** (the account is only requested, as a case) and the resource name lookup hit a
-    250 partial error. Fixed afterwards (commit "Shadows: noFetch name lookup, pending accounts, wait progress"),
-    **not yet re-tested**.
-
-- Run 3 (2026-10-18), new dedicated REST test user: blocked by authorizations before any test ran. 401 (password),
-  then HTTP 500 "Access denied" on `GET /self`: `authorization-model-3#all` is not a wildcard on 4.10. Role example
-  with single model actions in `docs/rest-notes.md`. Module now shows error bodies without `message` and explains 401.
-
-- Run 3, second attempt: connect, users, activation and adding the role with `validTo` green. Failed: the
-  account check (no shadow linked after 180 s, being analysed), `Set-` / `Remove-midPointRoleAssignment`
-  (container id is `@id` in JSON; fixed, not yet re-tested).
-
-- Case cmdlets (`Get-` / `Complete-` / `Remove-midPointCase`) and an example test configuration
-  (`Tests/Integration/midpoint/`, guide `docs/integration-tests.md`): manual test resource whose operator is the API
-  user, test role, API role limited to the test objects. The integration test recognises a manual resource by its
-  connector type (`Get-midPointResource`), completes its own cases and deletes them.
-  Not yet run against the instance.
+  resources, shadows (accounts), cases. Unit tests (Pester, mocked HTTP) and PSScriptAnalyzer pass locally and in CI.
+- Integration tests against a midPoint **4.10** test instance (details in `docs/rest-notes.md`):
+  - With a real resource (ConnId connector) and a REST user with unrestricted single model actions: **all green**
+    (users, activation, role assignment add / change / remove, account appears, account disabled after unassign).
+  - With the example objects from `Tests/Integration/midpoint/` (manual resource, API role limited to test objects),
+    run as `midpointtools-api`: **all green** (run 7, 2026-10-18), including the case flow through REST (complete the
+    add case, account exists; complete the delete case, account gone) and the cleanup of cases.
+  - Fixed on the way (runs 5-7): `connectorRef` imported with a filter comes with prefixed keys (`"t:oid"`), so the
+    connector type was never read (`Get-midPointProperty` now finds `<prefix>:<name>`); deleting a case needs
+    `authorization-model-3#cancelCase` (added to `030-role-api.xml`).
+- The integration test deletes leftovers of aborted runs at the start (`MPTEST-` users, cases of `MPTEST-` accounts).
+  If the connector type cannot be read, it still recognises a manual resource by the pending account with an open case.
 
 ## Next steps
 
-1. Import the example objects (`docs/integration-tests.md`), set the API user's password, create
-   `Tests/Integration/settings.local.ps1`, run `./build/Invoke-Tests.ps1 -Integration -SkipAnalyzer`.
-   Not verified yet: the API role's filters, the case flow (complete add / delete case), `@id` fix for
-   `Set-` / `Remove-midPointRoleAssignment`, shadow attribute format.
-2. Fix what the run finds, tick off the TODO list in `docs/rest-notes.md`.
-3. Optionally also run against a resource with a real connector (shadow attribute format).
-4. Not covered by any test yet: extension attributes (`-Property @{ 'extension/...' = ... }`) and the initial
+1. Remaining items of the TODO list in `docs/rest-notes.md` (prefixes of references, `resolveNames`, raw shadow
+   attributes, dead shadows).
+2. Not covered by any test yet: extension attributes (`-Property @{ 'extension/...' = ... }`) and the initial
    password on `New-midPointUser`. Add integration tests if needed.
-5. Release 0.1.0, see "Release 0.1.0" below.
+3. Release 0.1.0, see "Release 0.1.0" below. Steps 1 and 2 are not needed for it.
 
 ## Release 0.1.0
 
-1. Integration run green on 4.10 (next steps 1 and 2). Items that cannot be confirmed yet stay in the TODO list
-   of `docs/rest-notes.md`; they are fine for 0.1.0 as long as no test fails.
+1. Integration tests green on 4.10: done (runs 4 and 7). Open TODO items in `docs/rest-notes.md` do not block 0.1.0.
 2. One-time setup: PowerShell Gallery account, API key scoped to `midPointTools` (push new packages and versions),
    GitHub environment `psgallery` (Settings > Environments, optionally with a required reviewer) with the secret
    `PSGALLERY_API_KEY`.
@@ -55,8 +41,8 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
 
 ## Road to 1.0.0
 
-- All items in the TODO list of `docs/rest-notes.md` confirmed; integration tests green on 4.10 and on 4.8 (the
-  minimum the README claims), also against a resource with a real connector.
+- All items in the TODO list of `docs/rest-notes.md` confirmed; integration tests also on 4.8 (the minimum the
+  README claims).
 - Integration tests for extension attributes and the initial password.
 - Output objects and parameter sets stable over a few 0.x releases of real use.
 - Decide whether bearer token / OIDC login comes before 1.0 or can be added later without breaking changes.

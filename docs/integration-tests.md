@@ -27,7 +27,8 @@ keep them as they are.
 - assign and unassign the test role (and no other role), read the test role,
 - read the test resource, and read connectors (to recognise a manual resource by its connector type),
 - read, create, change and delete shadows (accounts) on the test resource,
-- read and delete the cases of the test resource, and complete the work items assigned to the API user.
+- read and delete (`#delete` plus `#cancelCase`) the cases of the test resource, and complete the work items assigned
+  to the API user.
 
 Everything else on the instance is invisible to it. Model actions are listed one by one on purpose:
 `authorization-model-3#all` is not a wildcard (see [rest-notes.md](rest-notes.md)).
