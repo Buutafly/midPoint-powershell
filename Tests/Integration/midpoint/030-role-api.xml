@@ -17,8 +17,7 @@
 <role oid="6d707400-0000-4000-8000-000000000003"
         xmlns="http://midpoint.evolveum.com/xml/ns/public/common/common-3"
         xmlns:c="http://midpoint.evolveum.com/xml/ns/public/common/common-3"
-        xmlns:q="http://prism.evolveum.com/xml/ns/public/query-3"
-        xmlns:org="http://midpoint.evolveum.com/xml/ns/public/common/org-3">
+        xmlns:q="http://prism.evolveum.com/xml/ns/public/query-3">
 
     <name>midPointTools API (test)</name>
     <description>REST access for the midPointTools integration tests, limited to the test objects.</description>
@@ -85,7 +84,7 @@
     </authorization>
 
     <authorization>
-        <!-- The relations are listed so that the manager assignment is covered, too. -->
+        <!-- No <relation>: the authorization then applies to all relations (member, manager, ...). -->
         <name>test-org-assign</name>
         <phase>request</phase>
         <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#assign</action>
@@ -104,8 +103,6 @@
                 </q:inOid>
             </filter>
         </target>
-        <relation>org:default</relation>
-        <relation>org:manager</relation>
     </authorization>
 
     <authorization>
