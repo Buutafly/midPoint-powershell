@@ -32,7 +32,10 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
      run 8.
    - `feature/user-password`: `Set-midPointUserPassword -Identity -NewPassword [-ForceChange]` in the style of
      `Set-ADAccountPassword -Reset`. Creating users without a password stays possible (`-Password` is optional).
-   - OIDC / bearer token login: in a separate session, on its own branch.
+   - `feature/oidc-login`: OIDC client credentials login for `Connect-midPoint` (bearer token). Research and design
+     done, nothing built yet: see [docs/oidc.md](docs/oidc.md) on that branch (plan, decisions, open questions for
+     the integration run). Next: build as planned, unit tests, prepare the `MIDPOINT_TOKEN_*` integration test,
+     pull request into `main`.
 2. Open from run 3: on a manual resource the user once had no linked shadow 180 s after the assignment (not seen
    since run 6).
 
@@ -65,7 +68,8 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
 - Integration tests use a dedicated manual resource; the test completes its cases like an operator and deletes them.
 - The extension item for the integration test comes from `MIDPOINT_TEST_EXTENSION_ITEM` (the instance's schema stays
   out of the public repo). A role assignment without relation shows `Relation` `default`.
-- Auth: HTTP Basic with a `PSCredential`; session in memory only. Bearer tokens later (`AuthType` field exists).
+- Auth: HTTP Basic with a `PSCredential`; session in memory only. Bearer tokens: OIDC client credentials
+  (generic IdP, secret kept in memory for renewal), no new required module; details in `docs/oidc.md`.
 - PowerShell 7.2+, midPoint 4.8+ (developed against 4.10), REST endpoint `<base>/ws/rest`, JSON.
 - No "reason" parameter for status changes: midPoint has no such field on users, and the module must work out of
   the box. midPoint's own `disableReason` is only read.
