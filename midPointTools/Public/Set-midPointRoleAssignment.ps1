@@ -4,7 +4,7 @@ function Set-midPointRoleAssignment {
     Changes the status or validity of an existing role assignment.
 
     .DESCRIPTION
-    Changes assignment/[id]/activation of the user's assignment of the role without removing it,
+    Changes assignment[id]/activation of the user's assignment of the role without removing it,
     e.g. to extend validTo or to suspend the assignment. If the user has the role assigned more
     than once (e.g. with different relations), select one with -AssignmentId.
 
@@ -96,7 +96,7 @@ function Set-midPointRoleAssignment {
 
         $id = Get-midPointContainerId $matching[0]
         if ($null -eq $id) { throw [System.InvalidOperationException]::new("The assignment of role '$(Get-midPointIdentityLabel $Role)' on user '$label' has no container id.") }
-        $deltas = New-midPointActivationDelta -Prefix "assignment/[$id]/activation" @activationParams
+        $deltas = New-midPointActivationDelta -Prefix "assignment[$id]/activation" @activationParams
         if (-not $PSCmdlet.ShouldProcess("$label ($userOid)", "Change assignment $id of role $(Get-midPointIdentityLabel $Role)")) { return }
 
         Invoke-midPointModify -Type users -Oid $userOid -ItemDelta $deltas

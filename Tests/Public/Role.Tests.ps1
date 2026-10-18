@@ -79,8 +79,8 @@ Describe 'Role cmdlets' {
         Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 1 -Exactly -ParameterFilter {
             if ($Method -ne 'PATCH') { return $false }
             $d = Get-SentDelta $Body
-            $Body -like '*"path":"assignment/`[3`]/activation/validTo","value":"2027-06-30T00:00:00.000+00:00"*' -and
-            $null -ne ($d | Where-Object path -EQ 'assignment/[3]/activation/administrativeStatus')
+            $Body -like '*"path":"assignment`[3`]/activation/validTo","value":"2027-06-30T00:00:00.000+00:00"*' -and
+            $null -ne ($d | Where-Object path -EQ 'assignment[3]/activation/administrativeStatus')
         }
     }
 
@@ -90,7 +90,7 @@ Describe 'Role cmdlets' {
 
         Set-midPointRoleAssignment $UserOid -Role $RoleOid -AssignmentId 9 -AdministrativeStatus Disabled
         Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -ParameterFilter {
-            $Method -eq 'PATCH' -and (Get-SentDelta $Body)[0].path -eq 'assignment/[9]/activation/administrativeStatus'
+            $Method -eq 'PATCH' -and (Get-SentDelta $Body)[0].path -eq 'assignment[9]/activation/administrativeStatus'
         }
     }
 

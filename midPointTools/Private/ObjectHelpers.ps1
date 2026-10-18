@@ -256,7 +256,7 @@ function Set-midPointNestedValue {
 
 function New-midPointActivationDelta {
     # Item deltas for administrativeStatus / validFrom / validTo below $Prefix
-    # ('activation' or 'assignment/[3]/activation'). Returns an empty list if nothing is set.
+    # ('activation' or 'assignment[3]/activation'). Returns an empty list if nothing is set.
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '', Justification = 'Builds an in-memory object only.')]
     [CmdletBinding()]
     param(
