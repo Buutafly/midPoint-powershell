@@ -43,7 +43,7 @@ function Remove-midPointRoleAssignment {
         $data = Get-midPointRoleAssignmentRaw -UserOid $userOid -RoleOid $roleOid
         $matching = @($data.Assignments)
         if ($null -ne $AssignmentId) {
-            $matching = @($matching | Where-Object { [long](Get-midPointProperty $_ 'id') -eq $AssignmentId })
+            $matching = @($matching | Where-Object { [long](Get-midPointContainerId $_) -eq $AssignmentId })
         }
 
         $label = Get-midPointIdentityLabel $Identity
@@ -52,11 +52,12 @@ function Remove-midPointRoleAssignment {
             return
         }
 
-        $ids = @($matching | ForEach-Object { Get-midPointProperty $_ 'id' })
+        $ids = @($matching | ForEach-Object { Get-midPointContainerId $_ } | Where-Object { $null -ne $_ })
+        if ($ids.Count -ne $matching.Count) { throw [System.InvalidOperationException]::new("An assignment of role '$(Get-midPointIdentityLabel $Role)' on user '$label' has no container id.") }
         if (-not $PSCmdlet.ShouldProcess("$label ($userOid)", "Remove assignment(s) $($ids -join ', ') of role $(Get-midPointIdentityLabel $Role)")) { return }
 
         $deltas = foreach ($id in $ids) {
-            New-midPointItemDelta -ModificationType delete -Path 'assignment' -Value ([ordered]@{ id = $id })
+            New-midPointItemDelta -ModificationType delete -Path 'assignment' -Value ([ordered]@{ '@id' = $id })
         }
         Invoke-midPointModify -Type users -Oid $userOid -ItemDelta @($deltas)
     }

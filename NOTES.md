@@ -18,6 +18,10 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
   then HTTP 500 "Access denied" on `GET /self`: `authorization-model-3#all` is not a wildcard on 4.10. Role example
   with single model actions in `docs/rest-notes.md`. Module now shows error bodies without `message` and explains 401.
 
+- Run 3, second attempt: connect, users, activation and adding the role with `validTo` green. Failed: the
+  account check (no shadow linked after 180 s, being analysed), `Set-` / `Remove-midPointRoleAssignment`
+  (container id is `@id` in JSON; fixed, not yet re-tested).
+
 ## Next steps
 
 1. Clean up leftovers from the interrupted run 2: the `MPTEST-…` user (and its open case) on the test instance:

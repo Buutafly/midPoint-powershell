@@ -21,6 +21,16 @@ function Get-midPointProperty {
     if ($p) { $p.Value }
 }
 
+function Get-midPointContainerId {
+    # Container ids (e.g. of assignments) come as '@id' in midPoint's JSON; 'id' is accepted as well.
+    [CmdletBinding()]
+    param([AllowNull()] [object] $InputObject)
+
+    $id = Get-midPointProperty $InputObject '@id'
+    if ($null -eq $id) { $id = Get-midPointProperty $InputObject 'id' }
+    $id
+}
+
 function ConvertFrom-midPointPolyString {
     # midPoint sends PolyStrings either as a plain string or as { orig, norm }.
     [CmdletBinding()]

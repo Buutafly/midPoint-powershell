@@ -76,7 +76,7 @@ function ConvertTo-midPointAssignmentObject {
         Role                 = ConvertFrom-midPointPolyString (Get-midPointProperty $targetRef 'targetName')
         RoleOid              = [string](Get-midPointProperty $targetRef 'oid')
         Relation             = ConvertFrom-midPointQName (Get-midPointProperty $targetRef 'relation')
-        AssignmentId         = Get-midPointProperty $Assignment 'id'
+        AssignmentId         = Get-midPointContainerId $Assignment
         AdministrativeStatus = Get-midPointProperty $activation 'administrativeStatus'
         EffectiveStatus      = Get-midPointProperty $activation 'effectiveStatus'
         ValidFrom            = ConvertFrom-midPointDateTime (Get-midPointProperty $activation 'validFrom')

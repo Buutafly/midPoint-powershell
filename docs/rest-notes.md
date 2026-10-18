@@ -37,6 +37,11 @@ Reference: [midPoint REST API](https://docs.evolveum.com/midpoint/reference/inte
   Without a read authorization, `GET /self` passes the REST check and then fails with **HTTP 500, body
   `Access denied`** (`AuthorizationException` in `DataAccessProcessor.applyReadConstraints`), not with 403.
 - Wrong password: HTTP 401 without a body.
+- Container ids (e.g. of assignments) are `@id` in JSON, not `id` (run 3: reading `id` gave an empty id and
+  `PATCH` failed with HTTP 400 "For input string: \"\""). The module reads `@id` (falls back to `id`) and deletes
+  assignments with `{ "@id": n }`.
+- Run 3 on a manual resource: 180 s after assigning the role, the user had no linked shadow on that resource
+  (neither live nor pending). Still to be analysed.
 
 ## REST user for the integration tests
 
@@ -76,7 +81,7 @@ authorization (`AUTZ.n> Evaluating authorization ...`) with its decision.
 Run `Tests/Integration` with `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` set for the remaining items.
 
 - [ ] Path with container id, `assignment/[3]/activation/validTo` (`Set-midPointRoleAssignment`).
-- [ ] Delete of an assignment by `{ "id": 3 }` only (`Remove-midPointRoleAssignment`).
+- [ ] Delete of an assignment by `{ "@id": 3 }` only (`Remove-midPointRoleAssignment`).
 - [ ] Reference type `c:RoleType` and relation `org:manager` prefixes are resolved in JSON.
 - [ ] Extension items via `-Property @{ 'extension/costCenter' = ... }` without namespace.
 - [ ] `resolveNames` fills `targetRef.targetName` for assignments and `resourceRef.targetName` for shadows.

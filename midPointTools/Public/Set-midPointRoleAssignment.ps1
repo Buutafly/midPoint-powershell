@@ -79,7 +79,7 @@ function Set-midPointRoleAssignment {
         $data = Get-midPointRoleAssignmentRaw -UserOid $userOid -RoleOid $roleOid
         $matching = @($data.Assignments)
         if ($null -ne $AssignmentId) {
-            $matching = @($matching | Where-Object { [long](Get-midPointProperty $_ 'id') -eq $AssignmentId })
+            $matching = @($matching | Where-Object { [long](Get-midPointContainerId $_) -eq $AssignmentId })
         }
 
         $label = Get-midPointIdentityLabel $Identity
@@ -90,11 +90,12 @@ function Set-midPointRoleAssignment {
             $PSCmdlet.ThrowTerminatingError($record)
         }
         if ($matching.Count -gt 1) {
-            $ids = ($matching | ForEach-Object { Get-midPointProperty $_ 'id' }) -join ', '
+            $ids = ($matching | ForEach-Object { Get-midPointContainerId $_ }) -join ', '
             throw [System.InvalidOperationException]::new("User '$label' has the role assigned more than once (assignment ids $ids). Select one with -AssignmentId.")
         }
 
-        $id = Get-midPointProperty $matching[0] 'id'
+        $id = Get-midPointContainerId $matching[0]
+        if ($null -eq $id) { throw [System.InvalidOperationException]::new("The assignment of role '$(Get-midPointIdentityLabel $Role)' on user '$label' has no container id.") }
         $deltas = New-midPointActivationDelta -Prefix "assignment/[$id]/activation" @activationParams
         if (-not $PSCmdlet.ShouldProcess("$label ($userOid)", "Change assignment $id of role $(Get-midPointIdentityLabel $Role)")) { return }
 

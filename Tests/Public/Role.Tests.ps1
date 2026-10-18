@@ -9,15 +9,15 @@ BeforeAll {
 
     $script:assignments = @"
 [
-  { "id": 3, "targetRef": { "oid": "$RoleOid", "type": "c:RoleType", "targetName": "Some Role" },
+  { "@id": 3, "targetRef": { "oid": "$RoleOid", "type": "c:RoleType", "targetName": "Some Role" },
     "activation": { "effectiveStatus": "enabled", "validTo": "2027-01-31T00:00:00.000Z" } },
-  { "id": 4, "targetRef": { "oid": "$OtherOid", "type": "c:OrgType", "targetName": "Some Org" } },
-  { "id": 7, "targetRef": { "oid": "$OtherOid", "type": "http://midpoint.evolveum.com/xml/ns/public/common/common-3#RoleType", "relation": "org:manager", "targetName": "Other Role" } }
+  { "@id": 4, "targetRef": { "oid": "$OtherOid", "type": "c:OrgType", "targetName": "Some Org" } },
+  { "@id": 7, "targetRef": { "oid": "$OtherOid", "type": "http://midpoint.evolveum.com/xml/ns/public/common/common-3#RoleType", "relation": "org:manager", "targetName": "Other Role" } }
 ]
 "@
     $script:twice = @"
 [
-  { "id": 3, "targetRef": { "oid": "$RoleOid", "type": "c:RoleType" } },
+  { "@id": 3, "targetRef": { "oid": "$RoleOid", "type": "c:RoleType" } },
   { "id": 9, "targetRef": { "oid": "$RoleOid", "type": "c:RoleType", "relation": "org:approver" } }
 ]
 "@
@@ -106,14 +106,14 @@ Describe 'Role cmdlets' {
             if ($Method -ne 'PATCH') { return $false }
             $d = Get-SentDelta $Body
             $d.Count -eq 2 -and ($d.modificationType | Select-Object -Unique) -eq 'delete' -and
-            (@($d.value.id) -join ',') -eq '3,9'
+            (@($d.value.'@id') -join ',') -eq '3,9'
         }
     }
 
     It 'Remove-midPointRoleAssignment takes piped assignments' {
         Get-midPointRoleAssignment $UserOid -Role 'Some Role' | Remove-midPointRoleAssignment
         Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -ParameterFilter {
-            $Method -eq 'PATCH' -and (Get-SentDelta $Body)[0].value.id -eq 3
+            $Method -eq 'PATCH' -and (Get-SentDelta $Body)[0].value.'@id' -eq 3
         }
     }
 
