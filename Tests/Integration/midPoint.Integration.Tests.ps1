@@ -244,6 +244,16 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
     Context 'Org assignment' -Skip:(-not $hasOrg) {
         BeforeAll {
             $script:org = Get-midPointOrg $env:MIDPOINT_TEST_ORG
+            if (-not $org) {
+                # A search hides objects the user may not read; a GET by OID tells "missing" (404) from "not
+                # allowed" (403 / 500 Access denied). The OID is the one of the example org 050-org-test.xml.
+                $exampleOid = '6d707400-0000-4000-8000-000000000005'
+                try {
+                    $byOid = Get-midPointOrg -Oid $exampleOid
+                    Write-Warning "Search for '$env:MIDPOINT_TEST_ORG' found nothing, but GET orgs/$exampleOid works: '$($byOid.Name)'. Check MIDPOINT_TEST_ORG."
+                }
+                catch { Write-Warning "Search for '$env:MIDPOINT_TEST_ORG' found nothing; GET orgs/$exampleOid fails: $($_.Exception.Message)" }
+            }
         }
 
         It 'finds the org' {
@@ -252,6 +262,7 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
         }
 
         It 'assigns the org as member' {
+            if (-not $org) { Set-ItResult -Skipped -Because 'the test org is not found (see the warning above)'; return }
             $a = @(Add-midPointOrgAssignment $user -Org $org -PassThru)
             $a.Count | Should -Be 1
             $a[0].Org | Should -Be $org.Name -Because 'resolveNames fills targetRef.targetName'
@@ -259,6 +270,7 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
         }
 
         It 'assigns the org as manager with validTo' {
+            if (-not $org) { Set-ItResult -Skipped -Because 'the test org is not found (see the warning above)'; return }
             Add-midPointOrgAssignment $user -Org $org -Relation manager -ValidTo (Get-Date).AddDays(30)
             $a = @(Get-midPointOrgAssignment $user -Org $org)
             Write-Host "Org assignments: $(($a | ForEach-Object { "$($_.Relation) (id $($_.AssignmentId), validTo $($_.ValidTo))" }) -join '; ')"
@@ -268,18 +280,22 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
         }
 
         It 'changes the validity of the manager assignment only' {
+            if (-not $org) { Set-ItResult -Skipped -Because 'the test org is not found (see the warning above)'; return }
             $m = Get-midPointOrgAssignment $user -Org $org | Where-Object Relation -EQ 'manager'
+            $m | Should -Not -BeNullOrEmpty -Because 'the manager assignment was added before'
             $a = $m | Set-midPointOrgAssignment -ClearValidTo -PassThru
             $a.AssignmentId | Should -Be $m.AssignmentId
             $a.ValidTo | Should -BeNullOrEmpty
         }
 
         It 'removes only the manager assignment' {
+            if (-not $org) { Set-ItResult -Skipped -Because 'the test org is not found (see the warning above)'; return }
             Get-midPointOrgAssignment $user -Org $org | Where-Object Relation -EQ 'manager' | Remove-midPointOrgAssignment -Confirm:$false
             @(Get-midPointOrgAssignment $user -Org $org).Relation | Should -Be @('default')
         }
 
         It 'removes the org' {
+            if (-not $org) { Set-ItResult -Skipped -Because 'the test org is not found (see the warning above)'; return }
             Remove-midPointOrgAssignment $user -Org $org -Confirm:$false
             Get-midPointOrgAssignment $user -Org $org | Should -BeNullOrEmpty
         }
