@@ -104,11 +104,11 @@ open questions, I run them and paste the output.
    of the shadow), the raw JSON of the shadow `attributes`, the dead shadow after the account is deleted
    (`Get-midPointShadow -IncludeDead`: still in linkRef, `dead: true`), and the prefixes `c:RoleType` / `org:default`
    in references. Fix what the run turns up and tick off the items.
-2. Add integration tests for the initial password on New-midPointUser (`password/value/clearValue`; check that the
-   user can log in with it, e.g. Connect-midPoint as that user needs REST rights – otherwise only check that midPoint
-   accepts it) and for extension attributes (`-Property @{ 'extension/...' = ... }`) – only if the test instance has
-   a suitable extension item; ask me first which one.
-3. Prepare the release 0.1.0: check CHANGELOG.md, README and the manifest, and list what I have to do on the
-   PowerShell Gallery and in GitHub (environment `psgallery`, secret `PSGALLERY_API_KEY`, tag `v0.1.0`).
+2. Add integration tests for the initial password on New-midPointUser (`password/value/clearValue`: midPoint
+   accepts it and the user has a password afterwards; the MPTEST- user has no REST rights, so no login check) and
+   for extension attributes (`-Property @{ 'extension/...' = ... }`) – only if the test instance has a suitable
+   extension item; ask me first which one.
+3. Release 0.1.0 following "Release 0.1.0" in NOTES.md (steps 1 and 2 do not block it): check CHANGELOG.md, README
+   and the manifest, and tell me what I have to do on the PowerShell Gallery and in GitHub before you tag.
 ```
 
