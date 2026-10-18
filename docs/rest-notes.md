@@ -105,10 +105,12 @@ Run `Tests/Integration` with `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` s
 - [ ] Shape of the OperationResult on 4xx (the module searches for the first `message`).
 - [ ] `password/value/clearValue` for the initial password on create.
 - [ ] `GET /connectors/{oid}` (`Get-midPointResource` -> `ConnectorType`): failed in run 4 for a user with
-      unrestricted `model-3#read`; the error message is still to be looked at (`Get-midPointResource <name> -Verbose`).
+      unrestricted `model-3#read` and for `midpointtools-api` with the `connectors-read` authorization; the error
+      message is still to be looked at (`Get-midPointResource <name> -Verbose`).
 - [ ] Case search with `objectRef matches (oid = "...")`; completing a manual case's work item with outcome `approve`
       makes the shadow exist (`refreshOnRead`), and the delete case removes it.
-- [ ] The example API role (`Tests/Integration/midpoint/030-role-api.xml`) is enough for a full run: filters
+- [ ] The example API role (`Tests/Integration/midpoint/030-role-api.xml`) is enough for a full run (users,
+      activation and assigning the test role already work with it): filters
       `name startsWith "MPTEST-"`, `q:inOid`, `q:ref`, and the work item authorization with `assignee/special=self`.
 
 ## Not in scope (yet)

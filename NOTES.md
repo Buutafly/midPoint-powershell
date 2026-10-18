@@ -6,42 +6,33 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
 ## Status
 
 - Prototype **0.1.0** of `midPointTools`, not yet released. 24 cmdlets: session, users, activation, role assignments,
-  resources, shadows (accounts), cases. Unit tests (Pester, mocked HTTP) and PSScriptAnalyzer pass locally and in CI (Ubuntu + Windows).
-- Integration tests against a midPoint **4.10** test instance:
-  - Run 1: all user and activation tests green (create, search, change, enable / disable, validity, 404 handling).
-  - Run 2 (with a test role): adding the role assignment with `validTo` works. The account check hung because the
-    test resource is a **manual resource** (the account is only requested, as a case) and the resource name lookup hit a
-    250 partial error. Fixed afterwards (commit "Shadows: noFetch name lookup, pending accounts, wait progress"),
-    **not yet re-tested**.
-
-- Run 3 (2026-10-18), new dedicated REST test user: blocked by authorizations before any test ran. 401 (password),
-  then HTTP 500 "Access denied" on `GET /self`: `authorization-model-3#all` is not a wildcard on 4.10. Role example
-  with single model actions in `docs/rest-notes.md`. Module now shows error bodies without `message` and explains 401.
-
-- Run 3, second attempt: connect, users, activation and adding the role with `validTo` green. Failed: the
-  account check (no shadow linked after 180 s, being analysed), `Set-` / `Remove-midPointRoleAssignment`
-  (container id is `@id` in JSON; fixed, not yet re-tested).
-
-- Case cmdlets (`Get-` / `Complete-` / `Remove-midPointCase`) and an example test configuration
-  (`Tests/Integration/midpoint/`, guide `docs/integration-tests.md`): manual test resource whose operator is the API
-  user, test role, API role limited to the test objects. The integration test recognises a manual resource by its
-  connector type (`Get-midPointResource`), completes its own cases and deletes them.
-  Not yet run against the instance.
-
-- Run 4 with a real resource (ConnId connector): all integration tests green (role assignment change and removal,
-  account appears, account disabled after unassign). Open: `Get-midPointResource` could not read the connector
-  (`ConnectorType` empty), so a manual resource would not be recognised yet; the manual case flow and the example
-  objects are still untested.
+  resources, shadows (accounts), cases. Unit tests (Pester, mocked HTTP) and PSScriptAnalyzer pass locally and in CI.
+- Integration tests against a midPoint **4.10** test instance (details in `docs/rest-notes.md`):
+  - With a real resource (ConnId connector) and a REST user with unrestricted single model actions: **all green**
+    (users, activation, role assignment add / change / remove, account appears, account disabled after unassign).
+  - Example objects from `Tests/Integration/midpoint/` imported on the test instance, run as `midpointtools-api`
+    (API role limited to test objects): users, activation and adding the test role **green**, so the narrow rights work
+    up to there. Then the account wait hung (cancelled after 1 min): `Get-midPointResource` could not read the
+    connector, even with the `connectors-read` authorization, so the test did not recognise the manual resource and
+    waited for a real (not pending) account.
+  - Leftovers of that cancelled run on the test instance: one `MPTEST-…` user and an open case on
+    `midPointTools Test Resource` (Ctrl+C skips AfterAll).
+- Never tested yet: the case flow (complete add / delete case, account exists afterwards), the cleanup of cases,
+  the API role's rights for shadows / cases / work items.
 
 ## Next steps
 
-0. Find out why `GET /connectors/{oid}` fails (`Get-midPointResource <name> -Verbose`) and fix the manual detection.
-1. Import the example objects (`docs/integration-tests.md`), set the API user's password, create
-   `Tests/Integration/settings.local.ps1`, run `./build/Invoke-Tests.ps1 -Integration -SkipAnalyzer`.
-   Not verified yet: the API role's filters, the case flow (complete add / delete case), `@id` fix for
-   `Set-` / `Remove-midPointRoleAssignment`, shadow attribute format.
-2. Fix what the run finds, tick off the TODO list in `docs/rest-notes.md`.
-3. Optionally also run against a resource with a real connector (shadow attribute format).
+1. Find out why `GET /connectors/{oid}` fails: run `Get-midPointResource 'midPointTools Test Resource' -Verbose` as
+   `midpointtools-api` (build `$cred` from `settings.local.ps1`, see `docs/integration-tests.md`) and read the
+   "Connector ... is not readable: ..." line. Possible fallback that needs no connector read: treat the resource as
+   manual when the requested account is pending with an open case (`Wait-midPointShadow -AllowPending`, then
+   `Get-midPointCase -Resource -Account`).
+2. Clean up the leftovers (as administrator):
+   `Get-midPointUser -Filter 'name startsWith "MPTEST-"' | Remove-midPointUser -Confirm:$false`, then
+   `Get-midPointCase -Resource 'midPointTools Test Resource' -State Open | Complete-midPointCase` and
+   `Get-midPointCase -Resource 'midPointTools Test Resource' | Remove-midPointCase -Confirm:$false`.
+3. Run the integration tests as `midpointtools-api` again; fix what the case flow and the API role need; tick off the
+   TODO list in `docs/rest-notes.md`.
 4. Not covered by any test yet: extension attributes (`-Property @{ 'extension/...' = ... }`) and the initial
    password on `New-midPointUser`. Add integration tests if needed.
 5. Release: PowerShell Gallery account, GitHub environment `psgallery` with secret `PSGALLERY_API_KEY`,
