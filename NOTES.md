@@ -23,6 +23,11 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
   - When the connector type is unknown, the integration test decides by the account: pending with an open case
     means a manual resource (the noted fallback). It also prints the raw `connectorRef` and, if there is a connector
     OID, probes `GET connectors/<oid>?exclude=schema`.
+  - Run 5 (2026-10-18, as `midpointtools-api`, still the code before the fallback): all green, 1 skipped. The test
+    took the manual resource for a real one and waited; the cases were completed by hand in the GUI. Then the
+    account existed with `mail` and `username` (read with fetch, i.e. `refreshOnRead` picked up the closed case),
+    and after removing the role the delete case made it disappear. So the API role covers users, assignment,
+    shadow read and the case-driven account life cycle; completing cases through REST is still untested.
 - Never tested yet: the case flow (complete add / delete case, account exists afterwards), the cleanup of cases,
   the API role's rights for shadows / cases / work items.
 
