@@ -14,7 +14,8 @@ from the PowerShell Gallery (with PSResourceGet when available, which needs no N
 #>
 [CmdletBinding()]
 param(
-    # Also run the integration tests (needs the MIDPOINT_* environment variables).
+    # Also run the integration tests (needs the MIDPOINT_* environment variables, or
+    # Tests/Integration/settings.local.ps1 that sets them; git ignores *.local.ps1).
     [switch] $Integration,
 
     # Skip PSScriptAnalyzer (CI always runs it).
@@ -73,5 +74,14 @@ $config.Output.Verbosity = 'Detailed'
 $config.TestResult.Enabled = $true
 $config.TestResult.OutputFormat = 'NUnitXml'
 $config.TestResult.OutputPath = Join-Path $root 'TestResults' 'pester.xml'
-if (-not $Integration) { $config.Filter.ExcludeTag = 'Integration' }
+if ($Integration) {
+    $settings = Join-Path $root 'Tests' 'Integration' 'settings.local.ps1'
+    if (Test-Path $settings) {
+        Write-Host "Integration settings from $settings"
+        . $settings
+    }
+}
+else {
+    $config.Filter.ExcludeTag = 'Integration'
+}
 Invoke-Pester -Configuration $config

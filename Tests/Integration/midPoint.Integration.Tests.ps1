@@ -1,6 +1,8 @@
 # Integration tests against a real midPoint test instance. Not run in CI.
+# Setting up a test instance (example objects to import): docs/integration-tests.md
 #
-# Required environment variables (set them locally, never commit values):
+# Required environment variables (set them locally, never commit values; ./build/Invoke-Tests.ps1 -Integration
+# also reads them from Tests/Integration/settings.local.ps1, which git ignores):
 #   MIDPOINT_URI       e.g. https://midpoint.example.com/midpoint
 #   MIDPOINT_USER      a midPoint user with REST authorizations
 #   MIDPOINT_PASSWORD
@@ -9,21 +11,23 @@
 #   MIDPOINT_TIMEOUT_SEC           request timeout in seconds (default 30 here)
 #   MIDPOINT_TEST_ROLE             a role name to assign / unassign
 #   MIDPOINT_TEST_RESOURCE         a resource the role provisions to (needs MIDPOINT_TEST_ROLE)
-#   MIDPOINT_TEST_RESOURCE_MANUAL = 1   the resource is a manual resource: the account is only requested
-#                                       (open case), so the test accepts a pending account and does not fetch
+#   MIDPOINT_TEST_RESOURCE_MANUAL = 1   the resource is a manual resource whose operator is MIDPOINT_USER:
+#                                       the test completes the cases of its own account like an operator
+#                                       and deletes them at the end
 #   MIDPOINT_SHADOW_TIMEOUT_SEC    how long to wait for the account (default 180)
 #
 # Run: Invoke-Pester ./Tests/Integration -Tag Integration -Output Detailed
 # Creates one user named MPTEST-<random> and deletes it at the end.
 # The role and the resource are never changed, only read: the test assigns the role to its own user (validTo in
 # 30 days), waits for the account on the resource (needs an inducement with a construction for that resource in the
-# role), clears the assignment's validTo and removes the assignment again. On a manual resource each run leaves
-# cases (account add, later delete) that have to be closed by hand.
+# role), clears the assignment's validTo, removes the assignment and waits until the account is gone.
+# With a real connector this creates and deletes an account MPTEST-<random> in the target system.
 
 BeforeDiscovery {
     $script:configured = $env:MIDPOINT_URI -and $env:MIDPOINT_USER -and $env:MIDPOINT_PASSWORD
     $script:hasRole = [bool]$env:MIDPOINT_TEST_ROLE
     $script:hasResource = $script:hasRole -and [bool]$env:MIDPOINT_TEST_RESOURCE
+    $script:isManual = $script:hasResource -and $env:MIDPOINT_TEST_RESOURCE_MANUAL -eq '1'
 }
 
 Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
@@ -36,12 +40,51 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
         # Test instances often run on http; its only warning (clear-text password) is noise here.
         Connect-midPoint -Uri $env:MIDPOINT_URI -Credential $cred -SkipCertificateCheck:($env:MIDPOINT_SKIP_CERT_CHECK -eq '1') -TimeoutSec $timeout -WarningAction SilentlyContinue
         $script:name = 'MPTEST-{0}' -f (Get-Random -Minimum 100000 -Maximum 999999)
+        $script:manual = $env:MIDPOINT_TEST_RESOURCE_MANUAL -eq '1' -and [bool]$env:MIDPOINT_TEST_RESOURCE
+        $script:wait = if ($env:MIDPOINT_SHADOW_TIMEOUT_SEC) { [int]$env:MIDPOINT_SHADOW_TIMEOUT_SEC } else { 180 }
+
+        function Complete-TestCase {
+            # Completes the open cases of the test account on the manual resource. Returns how many there were.
+            param([string] $Comment)
+            $open = @(Get-midPointCase -Resource $env:MIDPOINT_TEST_RESOURCE -Account $script:name -State Open)
+            $open | Complete-midPointCase -Comment $Comment
+            $open.Count
+        }
+
+        function Wait-TestCase {
+            # Waits for an open case of the test account (midPoint opens it while processing the change).
+            $deadline = [datetime]::UtcNow.AddSeconds($script:wait)
+            while ([datetime]::UtcNow -lt $deadline) {
+                if (@(Get-midPointCase -Resource $env:MIDPOINT_TEST_RESOURCE -Account $script:name -State Open).Count -gt 0) { return $true }
+                Start-Sleep -Seconds 2
+            }
+            $false
+        }
     }
 
     AfterAll {
         # Skip the cleanup when Connect-midPoint failed, so its error is the only one shown.
         if ($script:name -and (Get-midPointSession)) {
+            if ($script:manual) {
+                # A failed run can leave cases open; complete them so midPoint keeps no pending operations.
+                try { $null = Complete-TestCase -Comment 'midPointTools integration test cleanup' }
+                catch { Write-Warning "Cleanup: completing open cases failed: $_" }
+            }
             Get-midPointUser $script:name | Remove-midPointUser -Confirm:$false
+            if ($script:manual) {
+                try {
+                    # Deleting the user may open a case to delete the account.
+                    $null = Complete-TestCase -Comment 'midPointTools integration test cleanup'
+                    $cases = @(Get-midPointCase -Resource $env:MIDPOINT_TEST_RESOURCE -Account $script:name)
+                    # Reading the shadows lets midPoint record the closed cases (refreshOnRead) before they are deleted.
+                    foreach ($oid in @($cases.TargetOid | Where-Object { $_ } | Select-Object -Unique)) {
+                        try { $null = & (Get-Module midPointTools) { param($o) Get-midPointObjectByOid -Type shadows -Oid $o } $oid } catch { Write-Verbose "Shadow $oid not readable: $_" }
+                    }
+                    $cases | Remove-midPointCase -Confirm:$false
+                    Write-Host "Cleanup: deleted $($cases.Count) case(s) of $script:name."
+                }
+                catch { Write-Warning "Cleanup: cases of $script:name could not be cleared: $_" }
+            }
             Disconnect-midPoint
         }
     }
@@ -99,8 +142,6 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
         }
 
         It 'shows the account on the resource' -Skip:(-not $hasResource) {
-            $manual = $env:MIDPOINT_TEST_RESOURCE_MANUAL -eq '1'
-            $wait = if ($env:MIDPOINT_SHADOW_TIMEOUT_SEC) { [int]$env:MIDPOINT_SHADOW_TIMEOUT_SEC } else { 180 }
             Write-Host "Waiting up to $wait s for the account on '$env:MIDPOINT_TEST_RESOURCE'$(if ($manual) { ' (manual resource: a pending account counts)' })..."
 
             $s = Wait-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE -TimeoutSeconds $wait -AllowPending:$manual -NoFetch:$manual
@@ -115,6 +156,18 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
             Test-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE -AllowPending:$manual -NoFetch:$manual | Should -BeTrue
         }
 
+        It 'completes the case and the account exists (manual resource)' -Skip:(-not $isManual) {
+            $c = @(Get-midPointCase -Resource $env:MIDPOINT_TEST_RESOURCE -Account $name -State Open)
+            Write-Host "Open case(s): $(($c | ForEach-Object { "$($_.Name) [$($_.State), work items: $($_.OpenWorkItems), assignee: $($_.WorkItem.Assignee -join ', ')]" }) -join '; ')"
+            $c.Count | Should -BeGreaterThan 0
+            $c | Complete-midPointCase -Comment 'midPointTools integration test'
+
+            $s = Wait-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE -TimeoutSeconds $wait
+            Write-Host "Shadow after the case: exists=$($s.Exists), pending=$($s.PendingOperation -join ','), attributes: $(($s.Attributes.GetEnumerator() | Sort-Object Key | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ', ')"
+            $s.Exists | Should -BeTrue
+            @(Get-midPointCase -Resource $env:MIDPOINT_TEST_RESOURCE -Account $name -State Open).Count | Should -Be 0
+        }
+
         It 'changes the assignment validity' {
             $a = Set-midPointRoleAssignment $user -Role $env:MIDPOINT_TEST_ROLE -ClearValidTo -PassThru
             $a.ValidTo | Should -BeNullOrEmpty
@@ -123,6 +176,18 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
         It 'removes the role' {
             Remove-midPointRoleAssignment $user -Role $env:MIDPOINT_TEST_ROLE -Confirm:$false
             Get-midPointRoleAssignment $user -Role $env:MIDPOINT_TEST_ROLE | Should -BeNullOrEmpty
+        }
+
+        It 'removes the account' -Skip:(-not $hasResource) {
+            if ($manual) {
+                Wait-TestCase | Should -BeTrue -Because 'removing the role opens a case to delete the account'
+                Complete-TestCase -Comment 'midPointTools integration test' | Should -BeGreaterThan 0
+            }
+            $deadline = [datetime]::UtcNow.AddSeconds($wait)
+            while ((Test-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE) -and [datetime]::UtcNow -lt $deadline) {
+                Start-Sleep -Seconds 2
+            }
+            Test-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE | Should -BeFalse
         }
     }
 }

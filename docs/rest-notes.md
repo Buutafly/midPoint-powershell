@@ -17,6 +17,7 @@ Reference: [midPoint REST API](https://docs.evolveum.com/midpoint/reference/inte
 | Modify | `PATCH /users/{oid}` with `{ "objectModification": { "itemDelta": { "modificationType", "path", "value" } } }` → 204 | `Invoke-midPointModify` |
 | Delete | `DELETE /users/{oid}` → 204 | `Remove-midPointUser` |
 | Options | `?options=raw&options=resolveNames` (repeated parameter) | `Invoke-midPointRestMethod -Query` |
+| Cases | `POST /cases/search`, `GET` / `DELETE /cases/{oid}`; complete a work item with `POST /cases/{oid}/workItems/{id}/complete` and `{ "output": { "@type": "c:AbstractWorkItemOutputType", "outcome": "...approval/outcome#approve", "comment": "..." } }` | `Get-` / `Complete-` / `Remove-midPointCase` |
 | Status codes | 240 handled error, 250 partial error (both with an OperationResult); 4xx usually with an OperationResult | `Invoke-midPointRestMethod` (250 → warning) |
 
 ## Confirmed on midPoint 4.10 (integration tests, 2026-10-17)
@@ -76,6 +77,15 @@ still to be confirmed by a full integration run.
 Troubleshooting: set the logger `com.evolveum.midpoint.security` to `TRACE`; `idm.log` then lists every evaluated
 authorization (`AUTZ.n> Evaluating authorization ...`) with its decision.
 
+## Manual resources and cases (from the midPoint 4.10 sources)
+
+- The manual connector opens one case per change: `objectRef` = the resource, `targetRef` = the shadow, archetype
+  "Manual provisioning case" (`...0340`), name `Request to <operation> '<account>' on '<resource>'`.
+- Assignees: `business/operatorRef` of the resource, else the connector setting `defaultAssignee` (a user name).
+- When the case is closed, the case outcome decides: `approve` (or `success`) means the operator did the change;
+  `reject` means it failed. Completing the work item through REST closes the case.
+- With `consistency/refreshOnRead` the shadow picks up the closed case the next time it is read.
+
 ## To verify on midPoint 4.10 (TODO)
 
 Run `Tests/Integration` with `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` set for the remaining items.
@@ -91,6 +101,10 @@ Run `Tests/Integration` with `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` s
       `delta.objectToAdd.attributes`, and `exists: false` until the case is closed.
 - [ ] Shape of the OperationResult on 4xx (the module searches for the first `message`).
 - [ ] `password/value/clearValue` for the initial password on create.
+- [ ] Case search with `objectRef matches (oid = "...")`; completing a manual case's work item with outcome `approve`
+      makes the shadow exist (`refreshOnRead`), and the delete case removes it.
+- [ ] The example API role (`Tests/Integration/midpoint/030-role-api.xml`) is enough for a full run: filters
+      `name startsWith "MPTEST-"`, `q:inOid`, `q:ref`, and the work item authorization with `assignee/special=self`.
 
 ## Not in scope (yet)
 

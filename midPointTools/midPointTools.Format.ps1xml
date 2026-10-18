@@ -126,6 +126,30 @@
       </TableControl>
     </View>
     <View>
+      <Name>midPointTools.Case</Name>
+      <ViewSelectedBy><TypeName>midPointTools.Case</TypeName></ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader><Label>Name</Label></TableColumnHeader>
+          <TableColumnHeader><Label>State</Label></TableColumnHeader>
+          <TableColumnHeader><Label>Outcome</Label></TableColumnHeader>
+          <TableColumnHeader><Label>OpenWorkItems</Label></TableColumnHeader>
+          <TableColumnHeader><Label>Oid</Label></TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem><PropertyName>Name</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>State</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Outcome</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>OpenWorkItems</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Oid</PropertyName></TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+    <View>
       <Name>midPointTools.Session</Name>
       <ViewSelectedBy><TypeName>midPointTools.Session</TypeName></ViewSelectedBy>
       <ListControl>

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  midPointTools integration tests: the rights of the API user, limited to the test objects.
+
+  The API user can:
+  - use the REST API and read itself (Connect-midPoint reads GET /self),
+  - read, create, change and delete users whose name starts with MPTEST-,
+  - assign and unassign only the test role, and read it,
+  - read the test resource (by name, without contacting the connector),
+  - read, create, change and delete shadows (accounts) on the test resource,
+  - read and delete the cases of the test resource, and complete the work items assigned to it.
+  Nothing else on the instance is visible or changeable for it.
+
+  Note: authorization-model-3#all is not a wildcard; every model action is listed on its own.
+-->
+<role oid="6d707400-0000-4000-8000-000000000003"
+        xmlns="http://midpoint.evolveum.com/xml/ns/public/common/common-3"
+        xmlns:c="http://midpoint.evolveum.com/xml/ns/public/common/common-3"
+        xmlns:q="http://prism.evolveum.com/xml/ns/public/query-3">
+
+    <name>midPointTools API (test)</name>
+    <description>REST access for the midPointTools integration tests, limited to the test objects.</description>
+
+    <authorization>
+        <name>rest</name>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-rest-3#all</action>
+    </authorization>
+
+    <authorization>
+        <name>self-read</name>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#read</action>
+        <object>
+            <special>self</special>
+        </object>
+    </authorization>
+
+    <authorization>
+        <name>test-users</name>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#read</action>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#add</action>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#modify</action>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#delete</action>
+        <object>
+            <type>UserType</type>
+            <filter>
+                <q:text>name startsWith "MPTEST-"</q:text>
+            </filter>
+        </object>
+    </authorization>
+
+    <authorization>
+        <name>test-role-assign</name>
+        <phase>request</phase>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#assign</action>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#unassign</action>
+        <object>
+            <type>UserType</type>
+            <filter>
+                <q:text>name startsWith "MPTEST-"</q:text>
+            </filter>
+        </object>
+        <target>
+            <type>RoleType</type>
+            <filter>
+                <q:inOid>
+                    <q:value>6d707400-0000-4000-8000-000000000002</q:value>
+                </q:inOid>
+            </filter>
+        </target>
+    </authorization>
+
+    <authorization>
+        <name>test-role-read</name>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#read</action>
+        <object>
+            <type>RoleType</type>
+            <filter>
+                <q:inOid>
+                    <q:value>6d707400-0000-4000-8000-000000000002</q:value>
+                </q:inOid>
+            </filter>
+        </object>
+    </authorization>
+
+    <authorization>
+        <name>test-resource-read</name>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#read</action>
+        <object>
+            <type>ResourceType</type>
+            <filter>
+                <q:inOid>
+                    <q:value>6d707400-0000-4000-8000-000000000001</q:value>
+                </q:inOid>
+            </filter>
+        </object>
+    </authorization>
+
+    <authorization>
+        <name>test-shadows</name>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#read</action>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#add</action>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#modify</action>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#delete</action>
+        <object>
+            <type>ShadowType</type>
+            <filter>
+                <q:ref>
+                    <q:path>resourceRef</q:path>
+                    <q:value oid="6d707400-0000-4000-8000-000000000001" type="c:ResourceType"/>
+                </q:ref>
+            </filter>
+        </object>
+    </authorization>
+
+    <authorization>
+        <name>test-cases</name>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#read</action>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#delete</action>
+        <object>
+            <type>CaseType</type>
+            <filter>
+                <q:ref>
+                    <q:path>objectRef</q:path>
+                    <q:value oid="6d707400-0000-4000-8000-000000000001" type="c:ResourceType"/>
+                </q:ref>
+            </filter>
+        </object>
+    </authorization>
+
+    <authorization>
+        <!-- Same as in the built-in Approver role: work items assigned to the API user itself. -->
+        <name>own-workitems-complete</name>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#read</action>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#completeWorkItem</action>
+        <object>
+            <parent>
+                <type>CaseType</type>
+                <path>workItem</path>
+            </parent>
+            <assignee>
+                <special>self</special>
+            </assignee>
+        </object>
+    </authorization>
+</role>

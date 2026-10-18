@@ -81,7 +81,12 @@ Remove-midPointUser $u -Confirm:$false
 
 On a **manual resource** (or while an approval is pending) midPoint only requests the account, so it does not
 exist yet. `Wait-midPointShadow -AllowPending -NoFetch` and `Test-midPointShadow -AllowPending` accept such a
-requested account; `Get-midPointShadow` shows it with `IsPending` and `PendingOperation`.
+requested account; `Get-midPointShadow` shows it with `IsPending` and `PendingOperation`. The operator's side works
+with the case cmdlets:
+
+```powershell
+Get-midPointCase -Resource 'Manual Resource' -Account jdoe -State Open | Complete-midPointCase
+```
 
 ## Cmdlets
 
@@ -92,6 +97,7 @@ requested account; `Get-midPointShadow` shows it with `IsPending` and `PendingOp
 | Activation | `Enable-midPointUser`, `Disable-midPointUser`, `Unlock-midPointUser`, `Get-midPointUserActivation`, `Set-midPointUserActivation` |
 | Roles | `Get-midPointRole`, `Get-midPointRoleAssignment`, `Add-midPointRoleAssignment`, `Set-midPointRoleAssignment`, `Remove-midPointRoleAssignment` |
 | Accounts | `Get-midPointShadow`, `Test-midPointShadow`, `Wait-midPointShadow` |
+| Cases | `Get-midPointCase`, `Complete-midPointCase`, `Remove-midPointCase` |
 
 ### Status and validity
 
@@ -124,10 +130,9 @@ Current status, decisions and next steps: [NOTES.md](NOTES.md).
 ```
 
 The unit tests mock the HTTP layer and need no server. The integration tests in `Tests/Integration` run
-against a real midPoint when these environment variables are set: `MIDPOINT_URI`, `MIDPOINT_USER`,
-`MIDPOINT_PASSWORD`, optionally `MIDPOINT_SKIP_CERT_CHECK=1`, `MIDPOINT_TIMEOUT_SEC`, `MIDPOINT_TEST_ROLE`,
-`MIDPOINT_TEST_RESOURCE`, `MIDPOINT_TEST_RESOURCE_MANUAL=1` (manual resource) and `MIDPOINT_SHADOW_TIMEOUT_SEC`.
-They create one `MPTEST-…` user and delete it at the end.
+against a real midPoint test instance. [docs/integration-tests.md](docs/integration-tests.md) has example objects to
+import (a manual test resource, a test role, an API user with rights limited to the test objects) and the setup steps.
+The tests create one `MPTEST-…` user and delete it, and its cases, at the end.
 
 ## Releases
 

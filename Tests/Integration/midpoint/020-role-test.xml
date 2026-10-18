@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  midPointTools integration tests: the role the tests assign to their test user.
+  It gives an account on the test resource and nothing else.
+-->
+<role oid="6d707400-0000-4000-8000-000000000002"
+        xmlns="http://midpoint.evolveum.com/xml/ns/public/common/common-3"
+        xmlns:c="http://midpoint.evolveum.com/xml/ns/public/common/common-3">
+
+    <name>midPointTools Test Role</name>
+    <description>Assigned by the midPointTools integration tests: an account on the midPointTools Test Resource.</description>
+
+    <inducement>
+        <construction>
+            <resourceRef oid="6d707400-0000-4000-8000-000000000001" type="c:ResourceType"/>
+            <kind>account</kind>
+            <intent>default</intent>
+        </construction>
+    </inducement>
+</role>

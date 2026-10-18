@@ -5,7 +5,7 @@
     Author               = 'Buutafly'
     CompanyName          = 'Community'
     Copyright            = '(c) 2026 Buutafly. MIT License.'
-    Description          = 'PowerShell cmdlets for the Evolveum midPoint REST API: users, activation, role assignments and account checks for admin tasks and test scripts.'
+    Description          = 'PowerShell cmdlets for the Evolveum midPoint REST API: users, activation, role assignments, account checks and cases for admin tasks and test scripts.'
     PowerShellVersion    = '7.2'
     CompatiblePSEditions = @('Core')
     FormatsToProcess     = @('midPointTools.Format.ps1xml')
@@ -30,6 +30,9 @@
         'Get-midPointShadow'
         'Test-midPointShadow'
         'Wait-midPointShadow'
+        'Get-midPointCase'
+        'Complete-midPointCase'
+        'Remove-midPointCase'
     )
     CmdletsToExport      = @()
     VariablesToExport    = @()

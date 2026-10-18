@@ -15,3 +15,5 @@ First prototype.
 - Activation: `Enable-`, `Disable-`, `Unlock-midPointUser`, `Get-` / `Set-midPointUserActivation` (administrative status, validFrom, validTo).
 - Roles: `Get-midPointRole`, `Get-` / `Add-` / `Set-` / `Remove-midPointRoleAssignment` (relation, assignment status and validity).
 - Test helpers: `Get-`, `Test-`, `Wait-midPointShadow`.
+- Cases: `Get-`, `Complete-`, `Remove-midPointCase` (e.g. the cases of a manual resource).
+- Example midPoint objects for the integration tests (manual resource, test role, API user with limited rights).

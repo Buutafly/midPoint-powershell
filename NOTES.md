@@ -5,8 +5,8 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
 
 ## Status
 
-- Prototype **0.1.0** of `midPointTools`, not yet released. 20 cmdlets: session, users, activation, role assignments,
-  shadows (accounts). Unit tests (Pester, mocked HTTP) and PSScriptAnalyzer pass locally and in CI (Ubuntu + Windows).
+- Prototype **0.1.0** of `midPointTools`, not yet released. 23 cmdlets: session, users, activation, role assignments,
+  shadows (accounts), cases. Unit tests (Pester, mocked HTTP) and PSScriptAnalyzer pass locally and in CI (Ubuntu + Windows).
 - Integration tests against a midPoint **4.10** test instance:
   - Run 1: all user and activation tests green (create, search, change, enable / disable, validity, 404 handling).
   - Run 2 (with a test role): adding the role assignment with `validTo` works. The account check hung because the
@@ -22,14 +22,19 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
   account check (no shadow linked after 180 s, being analysed), `Set-` / `Remove-midPointRoleAssignment`
   (container id is `@id` in JSON; fixed, not yet re-tested).
 
+- Case cmdlets (`Get-` / `Complete-` / `Remove-midPointCase`) and an example test configuration
+  (`Tests/Integration/midpoint/`, guide `docs/integration-tests.md`): manual test resource whose operator is the API
+  user, test role, API role limited to the test objects. The integration test completes its own cases and deletes them.
+  Not yet run against the instance.
+
 ## Next steps
 
-1. Clean up leftovers from the interrupted run 2: the `MPTEST-…` user (and its open case) on the test instance:
-   `Get-midPointUser -Filter 'name startsWith "MPTEST-"' | Remove-midPointUser`.
-2. Run 3: `$env:MIDPOINT_TEST_RESOURCE_MANUAL = '1'` plus `MIDPOINT_TEST_ROLE` / `MIDPOINT_TEST_RESOURCE`, then
-   `./build/Invoke-Tests.ps1 -Integration -SkipAnalyzer`. Checks pending accounts, `Set-` / `Remove-midPointRoleAssignment`.
-   Optionally also with a resource that has a real connector (shadow attribute format).
-3. Fix what run 3 finds, tick off the TODO list in `docs/rest-notes.md`.
+1. Import the example objects (`docs/integration-tests.md`), set the API user's password, create
+   `Tests/Integration/settings.local.ps1`, run `./build/Invoke-Tests.ps1 -Integration -SkipAnalyzer`.
+   Not verified yet: the API role's filters, the case flow (complete add / delete case), `@id` fix for
+   `Set-` / `Remove-midPointRoleAssignment`, shadow attribute format.
+2. Fix what the run finds, tick off the TODO list in `docs/rest-notes.md`.
+3. Optionally also run against a resource with a real connector (shadow attribute format).
 4. Not covered by any test yet: extension attributes (`-Property @{ 'extension/...' = ... }`) and the initial
    password on `New-midPointUser`. Add integration tests if needed.
 5. Release: PowerShell Gallery account, GitHub environment `psgallery` with secret `PSGALLERY_API_KEY`,
@@ -38,6 +43,8 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
 ## Decisions
 
 - Module name `midPointTools` (free on the Gallery on 2026-10-17); cmdlet nouns `midPoint…` (lowercase m).
+- One module (no split like Az): cases live in midPointTools; code grouped by area so a later split stays possible.
+- Integration tests use a dedicated manual resource; the test completes its cases like an operator and deletes them.
 - Auth: HTTP Basic with a `PSCredential`; session in memory only. Bearer tokens later (`AuthType` field exists).
 - PowerShell 7.2+, midPoint 4.8+ (developed against 4.10), REST endpoint `<base>/ws/rest`, JSON.
 - No "reason" parameter for status changes: midPoint has no such field on users, and the module must work out of
@@ -51,6 +58,8 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
 ## How we work
 
 - Public repo: no hostnames, URLs (except example / docs hosts), user names, OIDs or secrets. A Pester test checks URLs.
+  Exception: the made-up OIDs `6d707400-0000-4000-8000-00000000000n` of the example objects in `Tests/Integration/midpoint/`.
+  Local settings go into `Tests/Integration/settings.local.ps1` (git-ignored).
 - Commits: author `Buutafly` (GitHub noreply address), trailer `Co-Authored-By: Claude`, no session links.
 - Branches: `main` is the default branch. Work happens on the working branch; every push also fast-forwards `main`.
   Pushing without asking is fine.

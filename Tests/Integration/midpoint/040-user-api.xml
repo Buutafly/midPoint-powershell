@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  midPointTools integration tests: the user the tests log in as.
+  No password is stored here: set it in midPoint after the import and keep it out of the repository.
+-->
+<user oid="6d707400-0000-4000-8000-000000000004"
+        xmlns="http://midpoint.evolveum.com/xml/ns/public/common/common-3"
+        xmlns:c="http://midpoint.evolveum.com/xml/ns/public/common/common-3">
+
+    <name>midpointtools-api</name>
+    <description>Logs in for the midPointTools integration tests. Rights limited to the test objects.</description>
+    <fullName>midPointTools API (test)</fullName>
+
+    <assignment>
+        <targetRef oid="6d707400-0000-4000-8000-000000000003" type="c:RoleType"/>
+    </assignment>
+</user>
