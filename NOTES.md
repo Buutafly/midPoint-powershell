@@ -5,7 +5,7 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
 
 ## Status
 
-- Prototype **0.1.0** of `midPointTools`, not yet released. 24 cmdlets: session, users, activation, role assignments,
+- **0.1.0** of `midPointTools` released on the PowerShell Gallery (2026-10-18, tag `v0.1.0`). 24 cmdlets: session, users, activation, role assignments,
   resources, shadows (accounts), cases. Unit tests (Pester, mocked HTTP) and PSScriptAnalyzer pass locally and in CI.
 - Integration tests against a midPoint **4.10** test instance (details in `docs/rest-notes.md`):
   - With a real resource (ConnId connector) and a REST user with unrestricted single model actions: **all green**
@@ -25,20 +25,21 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
 
 ## Next steps
 
-1. Release 0.1.0, see "Release 0.1.0" below: setup done, release date 2026-10-18 set, tag `v0.1.0` pushed; check step 5.
+1. Choose the scope of 0.2.0 (see "Later" and "Road to 1.0.0").
 2. Open from run 3: on a manual resource the user once had no linked shadow 180 s after the assignment (not seen
    since run 6).
 
-## Release 0.1.0
+## Release 0.1.0 (done 2026-10-18; the steps also apply to later versions)
 
 1. Integration tests green on 4.10: done (runs 4, 7 and 8); the TODO list in `docs/rest-notes.md` is done (run 8).
 2. One-time setup: PowerShell Gallery account, API key scoped to `midPointTools` (push new packages and versions),
    GitHub environment `psgallery` (Settings > Environments, optionally with a required reviewer) with the secret
    `PSGALLERY_API_KEY`. If the environment limits deployment branches and tags, it must allow the tags `v*`.
-   Checked 2026-10-18: CHANGELOG, README and manifest are ready; the name is still free on the Gallery.
+   Done 2026-10-18.
 3. In `CHANGELOG.md`, replace `unreleased` in `## [0.1.0] - unreleased` with the release date, and drop
    "(once published)" in the README's Install section; commit, push, CI green.
-4. Tag and push: `git tag v0.1.0 && git push origin v0.1.0`. The release workflow tests, publishes and creates the
+4. Tag and push: `git tag v0.1.0 && git push origin v0.1.0`. The user does this: a cloud session may only push its
+   working branch (tag push: HTTP 403). The release workflow tests, publishes and creates the
    GitHub release.
 5. Check: `Find-Module midPointTools`, then `Install-Module midPointTools -Scope CurrentUser` in a fresh session.
    A published version cannot be replaced on the Gallery (only unlisted); a fix becomes 0.1.1.
