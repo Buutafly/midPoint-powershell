@@ -7,8 +7,9 @@ connect once, then create, change, enable / disable and delete users, manage rol
 validity, and check the accounts a user has on the resources. The account checks are also meant to make test scripts
 for midPoint configurations short.
 
-> **Status: prototype (0.1.0).** The cmdlets are covered by unit tests against a mocked midPoint.
-> A few REST details still need confirmation on a real midPoint 4.10 instance, see [docs/rest-notes.md](docs/rest-notes.md).
+> **Status: early version (0.x).** The cmdlets are covered by unit tests against a mocked midPoint and by
+> integration tests against midPoint 4.10. Cmdlet parameters and output objects may still change before 1.0.0;
+> open REST details are listed in [docs/rest-notes.md](docs/rest-notes.md).
 
 This is a community project, not affiliated with Evolveum.
 
