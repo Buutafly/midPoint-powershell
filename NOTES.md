@@ -28,7 +28,8 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
 1. User runs run 8 (`MIDPOINT_TEST_EXTENSION_ITEM` set in `settings.local.ps1`); fix what it turns up and tick off
    the TODO items in `docs/rest-notes.md` (references, `resolveNames`, raw attributes, dead shadows, password,
    extension).
-2. Release 0.1.0, see "Release 0.1.0" below: waiting for the one-time setup (step 2). Step 1 does not block it.
+2. Release 0.1.0, see "Release 0.1.0" below, after run 8 is green (user's decision, 2026-10-18), then the one-time
+   setup (step 2).
 
 ## Release 0.1.0
 
