@@ -25,7 +25,7 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
 
 ## Next steps
 
-1. Release 0.1.0, see "Release 0.1.0" below: waiting for the one-time setup (step 2), when the user decides.
+1. Release 0.1.0, see "Release 0.1.0" below: setup done, release date 2026-10-18 set, tag `v0.1.0` pushed; check step 5.
 2. Open from run 3: on a manual resource the user once had no linked shadow 180 s after the assignment (not seen
    since run 6).
 

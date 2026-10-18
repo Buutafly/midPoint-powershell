@@ -21,7 +21,7 @@ This is a community project, not affiliated with Evolveum.
 
 ## Install
 
-From the PowerShell Gallery (once published):
+From the [PowerShell Gallery](https://www.powershellgallery.com/packages/midPointTools):
 
 ```powershell
 Install-Module midPointTools -Scope CurrentUser
