@@ -195,13 +195,14 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
         try {
             Write-Host "extension after create: $(Format-Json (Get-ModuleProperty $u.Raw 'extension'))"
             Get-ModuleProperty (Get-ModuleProperty $u.Raw 'extension') $item | Should -Be 'mptest-1'
+            $u.Extension[$item] | Should -Be 'mptest-1' -Because 'the user object has the Extension property'
 
             $u = Set-midPointUser $u -Replace @{ "extension/$item" = 'mptest-2' } -PassThru
             Write-Host "extension after replace: $(Format-Json (Get-ModuleProperty $u.Raw 'extension'))"
-            Get-ModuleProperty (Get-ModuleProperty $u.Raw 'extension') $item | Should -Be 'mptest-2'
+            $u.Extension[$item] | Should -Be 'mptest-2'
 
             $u = Set-midPointUser $u -Replace @{ "extension/$item" = '' } -PassThru
-            Get-ModuleProperty (Get-ModuleProperty $u.Raw 'extension') $item | Should -BeNullOrEmpty
+            $u.Extension[$item] | Should -BeNullOrEmpty
         }
         finally { $u | Remove-midPointUser -Confirm:$false }
     }

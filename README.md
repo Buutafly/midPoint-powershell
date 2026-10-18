@@ -41,7 +41,8 @@ Connect-midPoint -Uri https://midpoint.example.com/midpoint -Credential (Get-Cre
 
 Get-midPointUser jack
 New-midPointUser -Name jdoe -GivenName John -FamilyName Doe -EmailAddress jdoe@example.com
-Set-midPointUser jdoe -Replace @{ telephoneNumber = '+41 00 000 00 00' }
+Set-midPointUser jdoe -Replace @{ telephoneNumber = '+41 00 000 00 00'; 'extension/costCenter' = '4711' }
+(Get-midPointUser jdoe).Extension.costCenter
 
 Disable-midPointUser jdoe
 Enable-midPointUser jdoe -ValidTo (Get-Date).AddMonths(6)
