@@ -28,8 +28,14 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
   connector type (`Get-midPointResource`), completes its own cases and deletes them.
   Not yet run against the instance.
 
+- Run 4 with a real resource (ConnId connector): all integration tests green (role assignment change and removal,
+  account appears, account disabled after unassign). Open: `Get-midPointResource` could not read the connector
+  (`ConnectorType` empty), so a manual resource would not be recognised yet; the manual case flow and the example
+  objects are still untested.
+
 ## Next steps
 
+0. Find out why `GET /connectors/{oid}` fails (`Get-midPointResource <name> -Verbose`) and fix the manual detection.
 1. Import the example objects (`docs/integration-tests.md`), set the API user's password, create
    `Tests/Integration/settings.local.ps1`, run `./build/Invoke-Tests.ps1 -Integration -SkipAnalyzer`.
    Not verified yet: the API role's filters, the case flow (complete add / delete case), `@id` fix for

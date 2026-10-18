@@ -38,6 +38,9 @@ Reference: [midPoint REST API](https://docs.evolveum.com/midpoint/reference/inte
   Without a read authorization, `GET /self` passes the REST check and then fails with **HTTP 500, body
   `Access denied`** (`AuthorizationException` in `DataAccessProcessor.applyReadConstraints`), not with 403.
 - Wrong password: HTTP 401 without a body.
+- Run 4 (2026-10-18, real resource with a ConnId connector, dedicated REST user): all integration tests green.
+  `Set-midPointRoleAssignment` with `assignment[id]/...`, `Remove-midPointRoleAssignment` deleting by `{ "@id": n }`,
+  shadow read with attributes (fetch), account disabled (not deleted) after unassigning on that resource.
 - An item path with a container id is written `assignment[3]/activation/validTo` (no `/` before `[`); with
   `assignment/[3]/...` midPoint answers HTTP 500 "doesn't contain definition for path assignment//[3]/..." (run 3).
 - Container ids (e.g. of assignments) are `@id` in JSON, not `id` (run 3: reading `id` gave an empty id and
@@ -92,16 +95,17 @@ authorization (`AUTZ.n> Evaluating authorization ...`) with its decision.
 
 Run `Tests/Integration` with `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` set for the remaining items.
 
-- [ ] Delete of an assignment by `{ "@id": 3 }` only (`Remove-midPointRoleAssignment`).
 - [ ] Reference type `c:RoleType` and relation `org:manager` prefixes are resolved in JSON.
 - [ ] Extension items via `-Property @{ 'extension/costCenter' = ... }` without namespace.
 - [ ] `resolveNames` fills `targetRef.targetName` for assignments and `resourceRef.targetName` for shadows.
-- [ ] Shape of shadow `attributes` in JSON (keys `ri:mail` or `mail`; values as arrays).
+- [ ] Raw shape of shadow `attributes` in JSON (prefix, arrays); the module's flattened keys already work (run 4).
 - [ ] Dead shadows are still in `linkRef` (relation `related`) and carry `dead: true`.
 - [ ] Pending operations on shadows of a manual resource: `pendingOperation[].executionStatus`, `delta.changeType`,
       `delta.objectToAdd.attributes`, and `exists: false` until the case is closed.
 - [ ] Shape of the OperationResult on 4xx (the module searches for the first `message`).
 - [ ] `password/value/clearValue` for the initial password on create.
+- [ ] `GET /connectors/{oid}` (`Get-midPointResource` -> `ConnectorType`): failed in run 4 for a user with
+      unrestricted `model-3#read`; the error message is still to be looked at (`Get-midPointResource <name> -Verbose`).
 - [ ] Case search with `objectRef matches (oid = "...")`; completing a manual case's work item with outcome `approve`
       makes the shadow exist (`refreshOnRead`), and the delete case removes it.
 - [ ] The example API role (`Tests/Integration/midpoint/030-role-api.xml`) is enough for a full run: filters
