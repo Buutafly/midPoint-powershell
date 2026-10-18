@@ -14,6 +14,10 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
     250 partial error. Fixed afterwards (commit "Shadows: noFetch name lookup, pending accounts, wait progress"),
     **not yet re-tested**.
 
+- Run 3 (2026-10-18), new dedicated REST test user: blocked by authorizations before any test ran. 401 (password),
+  then HTTP 500 "Access denied" on `GET /self`: `authorization-model-3#all` is not a wildcard on 4.10. Role example
+  with single model actions in `docs/rest-notes.md`. Module now shows error bodies without `message` and explains 401.
+
 ## Next steps
 
 1. Clean up leftovers from the interrupted run 2: the `MPTEST-…` user (and its open case) on the test instance:
@@ -36,8 +40,9 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
   the box. midPoint's own `disableReason` is only read.
 - Validity (`validFrom` / `validTo`) and status for users **and** role assignments.
 - Name lookups of resources / shadows use `options=noFetch` (no connector access).
-- The REST user needs `authorization-rest-3#all` (or single REST operations) plus model authorizations.
-  On the test instance an administrator / Superuser was used.
+- The REST user needs `authorization-rest-3#all` (or single REST operations) plus single model authorizations
+  (`model-3#read`, `#add`, `#modify`, `#delete`, `#assign`, `#unassign`); `model-3#all` does not work. Runs 1 and 2
+  used an administrator / Superuser; from run 3 on a dedicated test user (role in `docs/rest-notes.md`).
 
 ## How we work
 

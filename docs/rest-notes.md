@@ -32,6 +32,43 @@ Reference: [midPoint REST API](https://docs.evolveum.com/midpoint/reference/inte
   resource; one broken resource (e.g. a manual connector configuration) turns the search into a 250 partial error.
   Name lookups of resources and shadows therefore use `noFetch`.
 - The REST user needs the REST authorization (`authorization-rest-3#all` or single operations) and the model authorizations; without them midPoint answers "Not authorized".
+- `authorization-model-3#all` is **not** a wildcard (authorization trace, 2026-10-18): it is "not applicable" to
+  `model-3#read` / `#get` (the same user works with Superuser, i.e. `authorization-3#all`). `authorization-rest-3#all` only works because the REST layer checks that exact URL.
+  Without a read authorization, `GET /self` passes the REST check and then fails with **HTTP 500, body
+  `Access denied`** (`AuthorizationException` in `DataAccessProcessor.applyReadConstraints`), not with 403.
+- Wrong password: HTTP 401 without a body.
+
+## REST user for the integration tests
+
+A role for a test instance (full access to the model, so not for production). Assign it to a user with a password;
+the integration tests log in as that user.
+
+```xml
+<role xmlns="http://midpoint.evolveum.com/xml/ns/public/common/common-3">
+    <name>REST API test user (midPointTools)</name>
+    <description>Test instance only: REST and model access for the midPointTools integration tests.</description>
+    <authorization>
+        <name>rest-all</name>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-rest-3#all</action>
+    </authorization>
+    <authorization>
+        <name>model-crud</name>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#read</action>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#add</action>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#modify</action>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#delete</action>
+    </authorization>
+    <authorization>
+        <name>model-assign</name>
+        <phase>request</phase>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#assign</action>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#unassign</action>
+    </authorization>
+</role>
+```
+
+Troubleshooting: set the logger `com.evolveum.midpoint.security` to `TRACE`; `idm.log` then lists every evaluated
+authorization (`AUTZ.n> Evaluating authorization ...`) with its decision.
 
 ## To verify on midPoint 4.10 (TODO)
 
