@@ -6,6 +6,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), ver
 ## [Unreleased]
 
 ### Added
+- Orgs: `Get-midPointOrg`, `Get-` / `Add-` / `Set-` / `Remove-midPointOrgAssignment` (membership as member, manager or
+  another relation, with assignment status and validity).
+- Example org `midPointTools Test Org` for the integration tests; the example API role may assign it.
 - `Extension` property on user objects: the user's extension items by name (`$u.Extension.costCenter`).
 
 ## [0.1.0] - 2026-10-18

@@ -23,6 +23,7 @@ function Remove-midPointRoleAssignment {
     .EXAMPLE
     Get-midPointRoleAssignment jack | Where-Object Relation -eq 'manager' | Remove-midPointRoleAssignment
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '', Justification = 'The shared assignment code calls ShouldProcess on this cmdlet.')]
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory, Position = 0, ValueFromPipelineByPropertyName)]
@@ -38,27 +39,6 @@ function Remove-midPointRoleAssignment {
     )
 
     process {
-        $userOid = Resolve-midPointObjectOid -InputObject $Identity -Type users
-        $roleOid = Resolve-midPointObjectOid -InputObject $Role -Type roles
-        $data = Get-midPointRoleAssignmentRaw -UserOid $userOid -RoleOid $roleOid
-        $matching = @($data.Assignments)
-        if ($null -ne $AssignmentId) {
-            $matching = @($matching | Where-Object { [long](Get-midPointContainerId $_) -eq $AssignmentId })
-        }
-
-        $label = Get-midPointIdentityLabel $Identity
-        if ($matching.Count -eq 0) {
-            Write-Warning "User '$label' has no assignment of role '$(Get-midPointIdentityLabel $Role)'$(if ($null -ne $AssignmentId) { " with id $AssignmentId" }). Nothing removed."
-            return
-        }
-
-        $ids = @($matching | ForEach-Object { Get-midPointContainerId $_ } | Where-Object { $null -ne $_ })
-        if ($ids.Count -ne $matching.Count) { throw [System.InvalidOperationException]::new("An assignment of role '$(Get-midPointIdentityLabel $Role)' on user '$label' has no container id.") }
-        if (-not $PSCmdlet.ShouldProcess("$label ($userOid)", "Remove assignment(s) $($ids -join ', ') of role $(Get-midPointIdentityLabel $Role)")) { return }
-
-        $deltas = foreach ($id in $ids) {
-            New-midPointItemDelta -ModificationType delete -Path 'assignment' -Value ([ordered]@{ '@id' = $id })
-        }
-        Invoke-midPointModify -Type users -Oid $userOid -ItemDelta @($deltas)
+        Remove-midPointAssignment -Kind Role -Cmdlet $PSCmdlet -Parameters $PSBoundParameters -Target $Role
     }
 }

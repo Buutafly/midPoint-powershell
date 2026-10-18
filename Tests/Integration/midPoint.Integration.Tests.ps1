@@ -12,6 +12,7 @@
 #   MIDPOINT_TEST_ROLE             a role name to assign / unassign
 #   MIDPOINT_TEST_RESOURCE         a resource the role provisions to (needs MIDPOINT_TEST_ROLE)
 #   MIDPOINT_SHADOW_TIMEOUT_SEC    how long to wait for the account (default 180)
+#   MIDPOINT_TEST_ORG              an org name to assign / unassign (as member and as manager)
 #   MIDPOINT_TEST_EXTENSION_ITEM   a single-valued string extension item of UserType (local name, e.g. costCenter)
 #
 # Run: Invoke-Pester ./Tests/Integration -Tag Integration -Output Detailed
@@ -29,6 +30,7 @@ BeforeDiscovery {
     $script:hasRole = [bool]$env:MIDPOINT_TEST_ROLE
     $script:hasResource = $script:hasRole -and [bool]$env:MIDPOINT_TEST_RESOURCE
     $script:hasExtension = [bool]$env:MIDPOINT_TEST_EXTENSION_ITEM
+    $script:hasOrg = [bool]$env:MIDPOINT_TEST_ORG
 }
 
 Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
@@ -238,6 +240,66 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
         $a = Set-midPointUserActivation $user -ClearValidTo -PassThru
         $a.ValidTo | Should -BeNullOrEmpty
         $a.EffectiveStatus | Should -Be 'enabled'
+    }
+
+    Context 'Org assignment' -Skip:(-not $hasOrg) {
+        BeforeAll {
+            $script:org = Get-midPointOrg $env:MIDPOINT_TEST_ORG
+            if (-not $org) {
+                # A search hides objects the user may not read; a GET by OID tells "missing" (404) from "not
+                # allowed" (403 / 500 Access denied). The OID is the one of the example org 050-org-test.xml.
+                $exampleOid = '6d707400-0000-4000-8000-000000000005'
+                try {
+                    $byOid = Get-midPointOrg -Oid $exampleOid
+                    Write-Warning "Search for '$env:MIDPOINT_TEST_ORG' found nothing, but GET orgs/$exampleOid works: '$($byOid.Name)'. Check MIDPOINT_TEST_ORG."
+                }
+                catch { Write-Warning "Search for '$env:MIDPOINT_TEST_ORG' found nothing; GET orgs/$exampleOid fails: $($_.Exception.Message)" }
+            }
+        }
+
+        It 'finds the org' {
+            $org | Should -Not -BeNullOrEmpty -Because "the test org '$env:MIDPOINT_TEST_ORG' must exist and be readable"
+            Write-Host "Test org: $($org.Name) (identifier $($org.Identifier))"
+        }
+
+        It 'assigns the org as member' {
+            if (-not $org) { Set-ItResult -Skipped -Because 'the test org is not found (see the warning above)'; return }
+            $a = @(Add-midPointOrgAssignment $user -Org $org -PassThru)
+            $a.Count | Should -Be 1
+            $a[0].Org | Should -Be $org.Name -Because 'resolveNames fills targetRef.targetName'
+            $a[0].Relation | Should -Be 'default'
+        }
+
+        It 'assigns the org as manager with validTo' {
+            if (-not $org) { Set-ItResult -Skipped -Because 'the test org is not found (see the warning above)'; return }
+            Add-midPointOrgAssignment $user -Org $org -Relation manager -ValidTo (Get-Date).AddDays(30)
+            $a = @(Get-midPointOrgAssignment $user -Org $org)
+            Write-Host "Org assignments: $(($a | ForEach-Object { "$($_.Relation) (id $($_.AssignmentId), validTo $($_.ValidTo))" }) -join '; ')"
+            Write-Host "parentOrgRef of the user: $(Format-Json @(Get-ModuleProperty (Get-midPointUser -Oid $user.Oid).Raw 'parentOrgRef'))"
+            @($a.Relation | Sort-Object) | Should -Be @('default', 'manager')
+            ($a | Where-Object Relation -EQ 'manager').ValidTo | Should -Not -BeNullOrEmpty
+        }
+
+        It 'changes the validity of the manager assignment only' {
+            if (-not $org) { Set-ItResult -Skipped -Because 'the test org is not found (see the warning above)'; return }
+            $m = Get-midPointOrgAssignment $user -Org $org | Where-Object Relation -EQ 'manager'
+            $m | Should -Not -BeNullOrEmpty -Because 'the manager assignment was added before'
+            $a = $m | Set-midPointOrgAssignment -ClearValidTo -PassThru
+            $a.AssignmentId | Should -Be $m.AssignmentId
+            $a.ValidTo | Should -BeNullOrEmpty
+        }
+
+        It 'removes only the manager assignment' {
+            if (-not $org) { Set-ItResult -Skipped -Because 'the test org is not found (see the warning above)'; return }
+            Get-midPointOrgAssignment $user -Org $org | Where-Object Relation -EQ 'manager' | Remove-midPointOrgAssignment -Confirm:$false
+            @(Get-midPointOrgAssignment $user -Org $org).Relation | Should -Be @('default')
+        }
+
+        It 'removes the org' {
+            if (-not $org) { Set-ItResult -Skipped -Because 'the test org is not found (see the warning above)'; return }
+            Remove-midPointOrgAssignment $user -Org $org -Confirm:$false
+            Get-midPointOrgAssignment $user -Org $org | Should -BeNullOrEmpty
+        }
     }
 
     Context 'Role assignment' -Skip:(-not $hasRole) {
