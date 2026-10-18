@@ -15,27 +15,28 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
     up to there. Then the account wait hung (cancelled after 1 min): `Get-midPointResource` could not read the
     connector, even with the `connectors-read` authorization, so the test did not recognise the manual resource and
     waited for a real (not pending) account.
-  - Leftovers of that cancelled run on the test instance: one `MPTEST-…` user and an open case on
-    `midPointTools Test Resource` (Ctrl+C skips AfterAll).
+  - Cause found (2026-10-18): `Get-midPointResource -Verbose` sends no `GET /connectors/...` at all, so the
+    resource from the `noFetch` search has no `connectorRef.oid` the module can read. The connector authorization is
+    not the problem. The shape of `connectorRef` in that response is still to be looked at.
+  - Leftovers of that run removed by hand. The integration test now deletes leftovers itself at the start
+    (`MPTEST-` users, open / closed cases of `MPTEST-` accounts on the test resource).
+  - When the connector type is unknown, the integration test decides by the account: pending with an open case
+    means a manual resource (the noted fallback). It also prints the raw `connectorRef` and, if there is a connector
+    OID, probes `GET connectors/<oid>?exclude=schema`.
 - Never tested yet: the case flow (complete add / delete case, account exists afterwards), the cleanup of cases,
   the API role's rights for shadows / cases / work items.
 
 ## Next steps
 
-1. Find out why `GET /connectors/{oid}` fails: run `Get-midPointResource 'midPointTools Test Resource' -Verbose` as
-   `midpointtools-api` (build `$cred` from `settings.local.ps1`, see `docs/integration-tests.md`) and read the
-   "Connector ... is not readable: ..." line. Possible fallback that needs no connector read: treat the resource as
-   manual when the requested account is pending with an open case (`Wait-midPointShadow -AllowPending`, then
-   `Get-midPointCase -Resource -Account`).
-2. Clean up the leftovers (as administrator):
-   `Get-midPointUser -Filter 'name startsWith "MPTEST-"' | Remove-midPointUser -Confirm:$false`, then
-   `Get-midPointCase -Resource 'midPointTools Test Resource' -State Open | Complete-midPointCase` and
-   `Get-midPointCase -Resource 'midPointTools Test Resource' | Remove-midPointCase -Confirm:$false`.
-3. Run the integration tests as `midpointtools-api` again; fix what the case flow and the API role need; tick off the
-   TODO list in `docs/rest-notes.md`.
-4. Not covered by any test yet: extension attributes (`-Property @{ 'extension/...' = ... }`) and the initial
+1. Show the raw connector reference (as `midpointtools-api` and as administrator):
+   `(Get-midPointResource 'midPointTools Test Resource').Raw.connectorRef | ConvertTo-Json -Depth 5`.
+   If it has no `oid` (e.g. only a `filter`, or a different shape), fix `Get-midPointResource` /
+   `ConvertTo-midPointResourceObject` accordingly and add a unit test.
+2. Run the integration tests as `midpointtools-api` (the case flow now runs even without a readable connector);
+   fix what the case flow and the API role need; tick off the TODO list in `docs/rest-notes.md`.
+3. Not covered by any test yet: extension attributes (`-Property @{ 'extension/...' = ... }`) and the initial
    password on `New-midPointUser`. Add integration tests if needed.
-5. Release: PowerShell Gallery account, GitHub environment `psgallery` with secret `PSGALLERY_API_KEY`,
+4. Release: PowerShell Gallery account, GitHub environment `psgallery` with secret `PSGALLERY_API_KEY`,
    update `CHANGELOG.md`, push tag `v0.1.0`.
 
 ## Decisions
