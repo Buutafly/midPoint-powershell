@@ -28,6 +28,14 @@ Describe 'Get-midPointResource' {
         (Get-midPointResource -Oid $ResourceOid).Name | Should -Be 'Test Resource'
     }
 
+    It 'reads the connector OID of a reference with a filter (prefixed keys, as midPoint 4.10 sends it)' {
+        $json = "{ `"oid`": `"$ResourceOid`", `"name`": `"Test Resource`", `"connectorRef`": { `"t:oid`": `"$ConnectorOid`", `"t:relation`": `"org:default`", `"t:type`": `"c:ConnectorType`", `"filter`": { `"@ns`": `"http://prism.evolveum.com/xml/ns/public/query-3`", `"text`": `"connectorType = \`"ManualConnector\`"`" } } }"
+        Add-TestRoute '^POST resources/search\?options=noFetch$' (New-TestResponse -Json (Get-TestSearchJson -Objects $json))
+        $r = Get-midPointResource 'Test Resource'
+        $r.ConnectorOid | Should -Be $ConnectorOid
+        $r.IsManual | Should -BeTrue
+    }
+
     It 'leaves the connector type empty when the connector is not readable' {
         Add-TestRoute "^GET connectors/$ConnectorOid$" (New-TestResponse -StatusCode 403 -Json '{ "message": "Not authorized" }')
         $r = Get-midPointResource 'Test Resource'

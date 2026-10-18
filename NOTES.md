@@ -15,30 +15,26 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
     up to there. Then the account wait hung (cancelled after 1 min): `Get-midPointResource` could not read the
     connector, even with the `connectors-read` authorization, so the test did not recognise the manual resource and
     waited for a real (not pending) account.
-  - Cause found (2026-10-18): `Get-midPointResource -Verbose` sends no `GET /connectors/...` at all, so the
-    resource from the `noFetch` search has no `connectorRef.oid` the module can read. The connector authorization is
-    not the problem. The shape of `connectorRef` in that response is still to be looked at.
-  - Leftovers of that run removed by hand. The integration test now deletes leftovers itself at the start
-    (`MPTEST-` users, open / closed cases of `MPTEST-` accounts on the test resource).
-  - When the connector type is unknown, the integration test decides by the account: pending with an open case
-    means a manual resource (the noted fallback). It also prints the raw `connectorRef` and, if there is a connector
-    OID, probes `GET connectors/<oid>?exclude=schema`.
   - Run 5 (2026-10-18, as `midpointtools-api`, still the code before the fallback): all green, 1 skipped. The test
     took the manual resource for a real one and waited; the cases were completed by hand in the GUI. Then the
     account existed with `mail` and `username` (read with fetch, i.e. `refreshOnRead` picked up the closed case),
     and after removing the role the delete case made it disappear. So the API role covers users, assignment,
     shadow read and the case-driven account life cycle; completing cases through REST is still untested.
-- Never tested yet: the case flow (complete add / delete case, account exists afterwards), the cleanup of cases,
-  the API role's rights for shadows / cases / work items.
+  - Run 6 (2026-10-18, as `midpointtools-api`): all green, including the case flow through REST (complete the add
+    case, account exists; complete the delete case, account gone). The test recognised the manual resource by its
+    open case (fallback). Two findings, both fixed afterwards:
+    - `connectorRef` (imported with a filter) comes with prefixed keys (`"t:oid"`), so the module saw no connector
+      OID and never read the connector. `Get-midPointProperty` now also finds `<prefix>:<name>`.
+    - Deleting cases failed with HTTP 403: midPoint wants `authorization-model-3#cancelCase` as well; added to
+      `030-role-api.xml`. Cases of runs 5 and 6 (`MPTEST-896267`, `MPTEST-474916`) are still on the test instance.
+- The integration test deletes leftovers itself at the start (`MPTEST-` users, cases of `MPTEST-` accounts).
 
 ## Next steps
 
-1. Show the raw connector reference (as `midpointtools-api` and as administrator):
-   `(Get-midPointResource 'midPointTools Test Resource').Raw.connectorRef | ConvertTo-Json -Depth 5`.
-   If it has no `oid` (e.g. only a `filter`, or a different shape), fix `Get-midPointResource` /
-   `ConvertTo-midPointResourceObject` accordingly and add a unit test.
-2. Run the integration tests as `midpointtools-api` (the case flow now runs even without a readable connector);
-   fix what the case flow and the API role need; tick off the TODO list in `docs/rest-notes.md`.
+1. Re-import `Tests/Integration/midpoint/030-role-api.xml` (overwrite) and run the integration tests again: the
+   resource should now show `connector ManualConnector` (no warning), and the leftover cases of runs 5 and 6 as well
+   as the run's own cases should be deleted. Then tick off the remaining TODO list in `docs/rest-notes.md`.
+2. Optional: drop the fallback (manual by open case) from the integration test once the connector type is read.
 3. Not covered by any test yet: extension attributes (`-Property @{ 'extension/...' = ... }`) and the initial
    password on `New-midPointUser`. Add integration tests if needed.
 4. Release: PowerShell Gallery account, GitHub environment `psgallery` with secret `PSGALLERY_API_KEY`,
