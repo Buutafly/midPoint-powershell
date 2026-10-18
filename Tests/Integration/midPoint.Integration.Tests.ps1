@@ -117,7 +117,7 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
                     $removed = Remove-TestCase -AnyTestAccount
                 }
                 if ($stale.Count -or $completed -or $removed) {
-                    Write-Host "Leftovers of an earlier run: deleted $($stale.Count) user(s) ($(($stale.Name) -join ', ')), completed $completed and deleted $removed case(s)."
+                    Write-Host "Leftovers of an earlier run: deleted $($stale.Count) user(s)$(if ($stale.Count) { " ($($stale.Name -join ', '))" }), completed $completed and deleted $removed case(s)."
                 }
             }
             catch { Write-Warning "Leftovers of an earlier run could not be cleared: $_" }

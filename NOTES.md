@@ -10,34 +10,22 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
 - Integration tests against a midPoint **4.10** test instance (details in `docs/rest-notes.md`):
   - With a real resource (ConnId connector) and a REST user with unrestricted single model actions: **all green**
     (users, activation, role assignment add / change / remove, account appears, account disabled after unassign).
-  - Example objects from `Tests/Integration/midpoint/` imported on the test instance, run as `midpointtools-api`
-    (API role limited to test objects): users, activation and adding the test role **green**, so the narrow rights work
-    up to there. Then the account wait hung (cancelled after 1 min): `Get-midPointResource` could not read the
-    connector, even with the `connectors-read` authorization, so the test did not recognise the manual resource and
-    waited for a real (not pending) account.
-  - Run 5 (2026-10-18, as `midpointtools-api`, still the code before the fallback): all green, 1 skipped. The test
-    took the manual resource for a real one and waited; the cases were completed by hand in the GUI. Then the
-    account existed with `mail` and `username` (read with fetch, i.e. `refreshOnRead` picked up the closed case),
-    and after removing the role the delete case made it disappear. So the API role covers users, assignment,
-    shadow read and the case-driven account life cycle; completing cases through REST is still untested.
-  - Run 6 (2026-10-18, as `midpointtools-api`): all green, including the case flow through REST (complete the add
-    case, account exists; complete the delete case, account gone). The test recognised the manual resource by its
-    open case (fallback). Two findings, both fixed afterwards:
-    - `connectorRef` (imported with a filter) comes with prefixed keys (`"t:oid"`), so the module saw no connector
-      OID and never read the connector. `Get-midPointProperty` now also finds `<prefix>:<name>`.
-    - Deleting cases failed with HTTP 403: midPoint wants `authorization-model-3#cancelCase` as well; added to
-      `030-role-api.xml`. Cases of runs 5 and 6 (`MPTEST-896267`, `MPTEST-474916`) are still on the test instance.
-- The integration test deletes leftovers itself at the start (`MPTEST-` users, cases of `MPTEST-` accounts).
+  - With the example objects from `Tests/Integration/midpoint/` (manual resource, API role limited to test objects),
+    run as `midpointtools-api`: **all green** (run 7, 2026-10-18), including the case flow through REST (complete the
+    add case, account exists; complete the delete case, account gone) and the cleanup of cases.
+  - Fixed on the way (runs 5-7): `connectorRef` imported with a filter comes with prefixed keys (`"t:oid"`), so the
+    connector type was never read (`Get-midPointProperty` now finds `<prefix>:<name>`); deleting a case needs
+    `authorization-model-3#cancelCase` (added to `030-role-api.xml`).
+- The integration test deletes leftovers of aborted runs at the start (`MPTEST-` users, cases of `MPTEST-` accounts).
+  If the connector type cannot be read, it still recognises a manual resource by the pending account with an open case.
 
 ## Next steps
 
-1. Re-import `Tests/Integration/midpoint/030-role-api.xml` (overwrite) and run the integration tests again: the
-   resource should now show `connector ManualConnector` (no warning), and the leftover cases of runs 5 and 6 as well
-   as the run's own cases should be deleted. Then tick off the remaining TODO list in `docs/rest-notes.md`.
-2. Optional: drop the fallback (manual by open case) from the integration test once the connector type is read.
-3. Not covered by any test yet: extension attributes (`-Property @{ 'extension/...' = ... }`) and the initial
+1. Remaining items of the TODO list in `docs/rest-notes.md` (prefixes of references, `resolveNames`, raw shadow
+   attributes, dead shadows).
+2. Not covered by any test yet: extension attributes (`-Property @{ 'extension/...' = ... }`) and the initial
    password on `New-midPointUser`. Add integration tests if needed.
-4. Release: PowerShell Gallery account, GitHub environment `psgallery` with secret `PSGALLERY_API_KEY`,
+3. Release: PowerShell Gallery account, GitHub environment `psgallery` with secret `PSGALLERY_API_KEY`,
    update `CHANGELOG.md`, push tag `v0.1.0`.
 
 ## Decisions
