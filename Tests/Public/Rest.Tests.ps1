@@ -52,6 +52,13 @@ Describe 'Invoke-midPointRestMethod' {
         $err.Exception.Message | Should -BeLike '*HTTP 401*login rejected*'
     }
 
+    It 'shows a body without a message as it is' {
+        Add-TestRoute '^GET self$' (New-TestResponse -StatusCode 500 -Json '{"code":500}')
+        $err = $null
+        try { InModuleScope midPointTools { Invoke-midPointRestMethod -Method GET -Path 'self' } } catch { $err = $_ }
+        $err.Exception.Message | Should -Be 'midPoint returned HTTP 500 for GET self: {"code":500}'
+    }
+
     It 'warns on 250 partial error' {
         Add-TestRoute '^PATCH users/x$' (New-TestResponse -StatusCode 250 -Json '{ "object": { "message": "Resource down" } }')
         InModuleScope midPointTools {

@@ -133,5 +133,8 @@ function Get-midPointErrorMessage {
             foreach ($child in $item) { if ($null -ne $child) { $queue.Enqueue($child) } }
         }
     }
-    ''
+    # No message anywhere: show the body itself (shortened) rather than nothing.
+    $raw = ConvertTo-Json -InputObject $Body -Depth 10 -Compress
+    if ($raw.Length -gt 500) { $raw = $raw.Substring(0, 500) + '...' }
+    $raw
 }
