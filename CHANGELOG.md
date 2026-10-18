@@ -5,6 +5,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), ver
 
 ## [Unreleased]
 
+### Added
+- `Extension` property on user objects: the user's extension items by name (`$u.Extension.costCenter`).
+
 ## [0.1.0] - 2026-10-18
 
 First prototype.

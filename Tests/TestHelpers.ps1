@@ -86,7 +86,8 @@ function Get-TestUserJson {
         [string] $Name = 'jack',
         [string] $Assignments = '[]',
         [string] $LinkRefs = '[]',
-        [string] $Activation = '{ "administrativeStatus": "enabled", "effectiveStatus": "enabled" }'
+        [string] $Activation = '{ "administrativeStatus": "enabled", "effectiveStatus": "enabled" }',
+        [string] $Extension = '{}'
     )
     @"
 { "user": {
@@ -98,7 +99,8 @@ function Get-TestUserJson {
     "emailAddress": "jack@example.com",
     "activation": $Activation,
     "assignment": $Assignments,
-    "linkRef": $LinkRefs
+    "linkRef": $LinkRefs,
+    "extension": $Extension
 } }
 "@
 }

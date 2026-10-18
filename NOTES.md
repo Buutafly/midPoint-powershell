@@ -29,7 +29,7 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
    - `feature/org-assignments`: `Get-midPointOrg`, `Get-` / `Add-` / `Set-` / `Remove-midPointOrgAssignment`
      (shared code with the role assignments), unit and integration tests.
    - `feature/user-extension`: `Extension` property on user objects (`$u.Extension.costCenter`), plain keys as in
-     run 8.
+     run 8. Done, unit tests green; the integration test's extension check reads `Extension` too (next run).
    - `feature/user-password`: `Set-midPointUserPassword -Identity -NewPassword [-ForceChange]` in the style of
      `Set-ADAccountPassword -Reset`. Creating users without a password stays possible (`-Password` is optional).
    - OIDC / bearer token login: in a separate session, on its own branch.

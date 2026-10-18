@@ -17,6 +17,7 @@ function ConvertTo-midPointUserObject {
             EffectiveStatus      = Get-midPointProperty $activation 'effectiveStatus'
             ValidFrom            = ConvertFrom-midPointDateTime (Get-midPointProperty $activation 'validFrom')
             ValidTo              = ConvertFrom-midPointDateTime (Get-midPointProperty $activation 'validTo')
+            Extension            = ConvertFrom-midPointItemContainer (Get-midPointProperty $InputObject 'extension')
             Raw                  = $InputObject
         }
     }
@@ -88,9 +89,10 @@ function ConvertTo-midPointAssignmentObject {
     }
 }
 
-function ConvertFrom-midPointAttributeContainer {
-    # Shadow 'attributes' -> hashtable. Keys lose their namespace prefix ('ri:mail' -> 'mail'),
-    # single-element arrays become scalars. midPoint 4.10 sends plain keys with an '@ns' entry (run 8).
+function ConvertFrom-midPointItemContainer {
+    # Shadow 'attributes' or an object's 'extension' -> hashtable. Keys lose their namespace prefix
+    # ('ri:mail' -> 'mail'), single-element arrays become scalars. midPoint 4.10 sends plain keys with an
+    # '@ns' entry (run 8).
     [CmdletBinding()]
     [OutputType([hashtable])]
     param([AllowNull()] [object] $Attributes)
@@ -125,14 +127,14 @@ function ConvertTo-midPointShadowObject {
             ConvertFrom-midPointQName (Get-midPointProperty (Get-midPointProperty $_ 'delta') 'changeType')
         } | Where-Object { $_ })
 
-    $attributes = ConvertFrom-midPointAttributeContainer (Get-midPointProperty $InputObject 'attributes')
+    $attributes = ConvertFrom-midPointItemContainer (Get-midPointProperty $InputObject 'attributes')
     if ($attributes.Count -eq 0) {
         # A shadow that only exists as a pending 'add' has its values in the delta.
         $add = $pending | Where-Object { (ConvertFrom-midPointQName (Get-midPointProperty (Get-midPointProperty $_ 'delta') 'changeType')) -eq 'add' } |
             Select-Object -First 1
         if ($add) {
             $objectToAdd = Get-midPointProperty (Get-midPointProperty $add 'delta') 'objectToAdd'
-            $attributes = ConvertFrom-midPointAttributeContainer (Get-midPointProperty $objectToAdd 'attributes')
+            $attributes = ConvertFrom-midPointItemContainer (Get-midPointProperty $objectToAdd 'attributes')
         }
     }
     [pscustomobject]@{
