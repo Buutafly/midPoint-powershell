@@ -16,24 +16,29 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
   - Fixed on the way (runs 5-7): `connectorRef` imported with a filter comes with prefixed keys (`"t:oid"`), so the
     connector type was never read (`Get-midPointProperty` now finds `<prefix>:<name>`); deleting a case needs
     `authorization-model-3#cancelCase` (added to `030-role-api.xml`).
+- Run 8 prepared (not yet run): the integration test prints / checks the open TODO items of `docs/rest-notes.md`
+  (`resolveNames` on assignment and shadow, raw shadow `attributes` with and without `noFetch`, the dead shadow after
+  the delete, `c:RoleType` / `org:default` in the assignment's `targetRef`), the initial password (user
+  `MPTEST-…-PW`) and, with `MIDPOINT_TEST_EXTENSION_ITEM` set, an extension item (user `MPTEST-…-EXT`).
 - The integration test deletes leftovers of aborted runs at the start (`MPTEST-` users, cases of `MPTEST-` accounts).
   If the connector type cannot be read, it still recognises a manual resource by the pending account with an open case.
 
 ## Next steps
 
-1. Remaining items of the TODO list in `docs/rest-notes.md` (prefixes of references, `resolveNames`, raw shadow
-   attributes, dead shadows).
-2. Not covered by any test yet: extension attributes (`-Property @{ 'extension/...' = ... }`) and the initial
-   password on `New-midPointUser`. Add integration tests if needed.
-3. Release 0.1.0, see "Release 0.1.0" below. Steps 1 and 2 are not needed for it.
+1. User runs run 8 (`MIDPOINT_TEST_EXTENSION_ITEM` set in `settings.local.ps1`); fix what it turns up and tick off
+   the TODO items in `docs/rest-notes.md` (references, `resolveNames`, raw attributes, dead shadows, password,
+   extension).
+2. Release 0.1.0, see "Release 0.1.0" below: waiting for the one-time setup (step 2). Step 1 does not block it.
 
 ## Release 0.1.0
 
 1. Integration tests green on 4.10: done (runs 4 and 7). Open TODO items in `docs/rest-notes.md` do not block 0.1.0.
 2. One-time setup: PowerShell Gallery account, API key scoped to `midPointTools` (push new packages and versions),
    GitHub environment `psgallery` (Settings > Environments, optionally with a required reviewer) with the secret
-   `PSGALLERY_API_KEY`.
-3. In `CHANGELOG.md`, replace `unreleased` in `## [0.1.0] - unreleased` with the release date; commit, push, CI green.
+   `PSGALLERY_API_KEY`. If the environment limits deployment branches and tags, it must allow the tags `v*`.
+   Checked 2026-10-18: CHANGELOG, README and manifest are ready; the name is still free on the Gallery.
+3. In `CHANGELOG.md`, replace `unreleased` in `## [0.1.0] - unreleased` with the release date, and drop
+   "(once published)" in the README's Install section; commit, push, CI green.
 4. Tag and push: `git tag v0.1.0 && git push origin v0.1.0`. The release workflow tests, publishes and creates the
    GitHub release.
 5. Check: `Find-Module midPointTools`, then `Install-Module midPointTools -Scope CurrentUser` in a fresh session.
@@ -52,6 +57,8 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
 - Module name `midPointTools` (free on the Gallery on 2026-10-17); cmdlet nouns `midPoint…` (lowercase m).
 - One module (no split like Az): cases live in midPointTools; code grouped by area so a later split stays possible.
 - Integration tests use a dedicated manual resource; the test completes its cases like an operator and deletes them.
+- The extension item for the integration test comes from `MIDPOINT_TEST_EXTENSION_ITEM` (the instance's schema stays
+  out of the public repo). A role assignment without relation shows `Relation` `default`.
 - Auth: HTTP Basic with a `PSCredential`; session in memory only. Bearer tokens later (`AuthType` field exists).
 - PowerShell 7.2+, midPoint 4.8+ (developed against 4.10), REST endpoint `<base>/ws/rest`, JSON.
 - No "reason" parameter for status changes: midPoint has no such field on users, and the module must work out of

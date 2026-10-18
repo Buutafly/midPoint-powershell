@@ -69,13 +69,16 @@ function ConvertTo-midPointAssignmentObject {
 
     $targetRef = Get-midPointProperty $Assignment 'targetRef'
     $activation = Get-midPointProperty $Assignment 'activation'
+    # A reference without relation has the default relation.
+    $relation = ConvertFrom-midPointQName (Get-midPointProperty $targetRef 'relation')
+    if (-not $relation) { $relation = 'default' }
     [pscustomobject]@{
         PSTypeName           = 'midPointTools.RoleAssignment'
         User                 = ConvertFrom-midPointPolyString (Get-midPointProperty $User 'name')
         UserOid              = [string](Get-midPointProperty $User 'oid')
         Role                 = ConvertFrom-midPointPolyString (Get-midPointProperty $targetRef 'targetName')
         RoleOid              = [string](Get-midPointProperty $targetRef 'oid')
-        Relation             = ConvertFrom-midPointQName (Get-midPointProperty $targetRef 'relation')
+        Relation             = $relation
         AssignmentId         = Get-midPointContainerId $Assignment
         AdministrativeStatus = Get-midPointProperty $activation 'administrativeStatus'
         EffectiveStatus      = Get-midPointProperty $activation 'effectiveStatus'

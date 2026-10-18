@@ -104,10 +104,12 @@ authorization (`AUTZ.n> Evaluating authorization ...`) with its decision.
 
 ## To verify on midPoint 4.10 (TODO)
 
-Run `Tests/Integration` with `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` set for the remaining items.
+Run `Tests/Integration` with `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` set for the remaining items
+(`MIDPOINT_TEST_EXTENSION_ITEM` for the extension item). The integration test prints the raw JSON of each item.
 
-- [ ] Reference type `c:RoleType` and relation `org:manager` prefixes are resolved in JSON.
-- [ ] Extension items via `-Property @{ 'extension/costCenter' = ... }` without namespace.
+- [ ] Reference type `c:RoleType` and relation `org:default` prefixes are resolved in JSON (the test assigns with
+      `-Relation default`). `org:manager` is covered by the unit tests only.
+- [ ] Extension items via `-Property @{ 'extension/costCenter' = ... }` without namespace (create, replace, clear).
 - [ ] `resolveNames` fills `targetRef.targetName` for assignments and `resourceRef.targetName` for shadows.
 - [ ] Raw shape of shadow `attributes` in JSON (prefix, arrays); the module's flattened keys already work (run 4).
 - [ ] Dead shadows are still in `linkRef` (relation `related`) and carry `dead: true`.

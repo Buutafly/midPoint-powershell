@@ -17,4 +17,8 @@ First prototype.
 - Test helpers: `Get-`, `Test-`, `Wait-midPointShadow`.
 - Cases: `Get-`, `Complete-`, `Remove-midPointCase` (e.g. the cases of a manual resource).
 - `Get-midPointResource` with the connector type (recognises manual resources).
+- Role assignments without a relation show `Relation` `default` (midPoint's default relation).
 - Example midPoint objects for the integration tests (manual resource, test role, API user with limited rights).
+
+[Unreleased]: https://github.com/Buutafly/midPoint-powershell/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Buutafly/midPoint-powershell/releases/tag/v0.1.0

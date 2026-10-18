@@ -55,13 +55,14 @@ Tested with midPoint 4.10. You need an administrator account on the test instanc
 
 ## What a test run does
 
-1. Logs in as `midpointtools-api` and creates the user `MPTEST-<random>`.
+1. Logs in as `midpointtools-api` and creates the user `MPTEST-<random>`. Two short-lived users check the initial
+   password (`MPTEST-<random>-PW`) and, with `MIDPOINT_TEST_EXTENSION_ITEM`, an extension item (`MPTEST-<random>-EXT`).
 2. Changes it (description, status, validity) and searches it.
 3. Assigns `midPointTools Test Role` with a `validTo` date. midPoint opens a case
    *"Request to add 'MPTEST-…' on 'midPointTools Test Resource'"* for the API user; the test sees the requested
    account (pending), completes the case like an operator and checks that the account now exists.
 4. Changes the assignment's validity and removes the assignment. midPoint opens a case to delete the account;
-   the test completes it and checks that the account is gone.
+   the test completes it, checks that the account is gone and that its shadow is kept as a dead shadow.
 5. At the end (also after a failure) it completes any case of its account that is still open, deletes the user and
    deletes the cases of its account.
 
@@ -92,3 +93,10 @@ connector the test creates an account `MPTEST-<random>` in the target system, wa
 role waits until midPoint has deleted or disabled it (deleting the test user at the end deprovisions it as configured).
 The test recognises a manual (or semi-manual) resource by its connector type `ManualConnector` and then completes
 the cases of its account, which only works when the test user is the resource's operator.
+
+## Extension items
+
+The extension test needs an extension item that exists on your instance, so it only runs when
+`MIDPOINT_TEST_EXTENSION_ITEM` names one: a single-valued string item of `UserType`, given by its local name
+(e.g. `costCenter`, no namespace). The test sets it with `New-midPointUser -Property @{ 'extension/<item>' = ... }`,
+changes and clears it with `Set-midPointUser -Replace`. The example API role already allows this (no item limits).

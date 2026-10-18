@@ -12,9 +12,11 @@
 #   MIDPOINT_TEST_ROLE             a role name to assign / unassign
 #   MIDPOINT_TEST_RESOURCE         a resource the role provisions to (needs MIDPOINT_TEST_ROLE)
 #   MIDPOINT_SHADOW_TIMEOUT_SEC    how long to wait for the account (default 180)
+#   MIDPOINT_TEST_EXTENSION_ITEM   a single-valued string extension item of UserType (local name, e.g. costCenter)
 #
 # Run: Invoke-Pester ./Tests/Integration -Tag Integration -Output Detailed
-# Creates one user named MPTEST-<random> and deletes it at the end.
+# Creates one user named MPTEST-<random> and deletes it at the end (plus MPTEST-<random>-PW / -EXT for the password
+# and extension tests, deleted right away).
 # The role and the resource are never changed, only read: the test assigns the role to its own user (validTo in
 # 30 days), waits for the account on the resource (needs an inducement with a construction for that resource in the
 # role), clears the assignment's validTo, removes the assignment and waits until the account is deleted or disabled.
@@ -26,6 +28,7 @@ BeforeDiscovery {
     $script:configured = $env:MIDPOINT_URI -and $env:MIDPOINT_USER -and $env:MIDPOINT_PASSWORD
     $script:hasRole = [bool]$env:MIDPOINT_TEST_ROLE
     $script:hasResource = $script:hasRole -and [bool]$env:MIDPOINT_TEST_RESOURCE
+    $script:hasExtension = [bool]$env:MIDPOINT_TEST_EXTENSION_ITEM
 }
 
 Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
@@ -39,6 +42,19 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
         Connect-midPoint -Uri $env:MIDPOINT_URI -Credential $cred -SkipCertificateCheck:($env:MIDPOINT_SKIP_CERT_CHECK -eq '1') -TimeoutSec $timeout -WarningAction SilentlyContinue
         $script:name = 'MPTEST-{0}' -f (Get-Random -Minimum 100000 -Maximum 999999)
         $script:wait = if ($env:MIDPOINT_SHADOW_TIMEOUT_SEC) { [int]$env:MIDPOINT_SHADOW_TIMEOUT_SEC } else { 180 }
+
+        function Get-ModuleProperty {
+            # The module's prefix-tolerant property read ('oid' also finds 't:oid').
+            param($InputObject, [string] $Name)
+            & (Get-Module midPointTools) { param($o, $n) Get-midPointProperty $o $n } $InputObject $Name
+        }
+
+        function Format-Json {
+            # Raw JSON for the run output, so one run shows what midPoint sends.
+            param($InputObject)
+            if ($null -eq $InputObject) { return '<none>' }
+            ConvertTo-Json -InputObject $InputObject -Depth 10 -Compress
+        }
 
         function Get-TestCase {
             # Cases of one test account on the test resource; with -AnyTestAccount those of every MPTEST- account.
@@ -101,6 +117,7 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
                 Write-Warning 'The test decides by the account: pending with an open case means a manual resource.'
             }
             $script:manual = $resource.IsManual
+            $script:resourceName = $resource.Name
             Write-Host "Test resource '$($resource.Name)': connector $($resource.ConnectorType)$(if ($manual) { ' - manual resource, the test completes the cases of its account' })"
         }
 
@@ -132,7 +149,7 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
                 try { $null = Complete-TestCase -Comment 'midPointTools integration test cleanup' }
                 catch { Write-Warning "Cleanup: completing open cases failed: $_" }
             }
-            Get-midPointUser $script:name | Remove-midPointUser -Confirm:$false
+            Get-midPointUser -Filter ('name startsWith "{0}"' -f $script:name) | Remove-midPointUser -Confirm:$false
             if ($script:manual) {
                 try {
                     # Deleting the user may open a case to delete the account.
@@ -154,6 +171,37 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
         $script:user = New-midPointUser -Name $name -GivenName 'Test' -FamilyName 'User' -EmailAddress "$name@example.com" -PassThru
         $user.Oid | Should -Match '^[0-9a-f-]{36}$'
         $user.Name | Should -Be $name
+    }
+
+    It 'creates a user with an initial password (credentials/password/value/clearValue)' {
+        # A second user, so a rejected password does not break the other tests. No login check: MPTEST- users
+        # have no REST rights.
+        $secret = ConvertTo-SecureString ('Mp1!' + [guid]::NewGuid().ToString('N').Substring(0, 16)) -AsPlainText -Force
+        $u = New-midPointUser -Name "$name-PW" -Password $secret -PassThru
+        try {
+            $password = Get-ModuleProperty (Get-ModuleProperty $u.Raw 'credentials') 'password'
+            # Only the item names, never the (encrypted or hashed) value.
+            Write-Host "credentials/password of $($u.Name): items [$(@($password.PSObject.Properties.Name) -join ', ')], value items [$(@((Get-ModuleProperty $password 'value').PSObject.Properties.Name) -join ', ')]"
+            $password | Should -Not -BeNullOrEmpty -Because 'midPoint stores the initial password'
+        }
+        finally { $u | Remove-midPointUser -Confirm:$false }
+    }
+
+    It 'sets an extension item on create and change (MIDPOINT_TEST_EXTENSION_ITEM)' -Skip:(-not $hasExtension) {
+        $item = $env:MIDPOINT_TEST_EXTENSION_ITEM
+        $u = New-midPointUser -Name "$name-EXT" -Property @{ "extension/$item" = 'mptest-1' } -PassThru
+        try {
+            Write-Host "extension after create: $(Format-Json (Get-ModuleProperty $u.Raw 'extension'))"
+            Get-ModuleProperty (Get-ModuleProperty $u.Raw 'extension') $item | Should -Be 'mptest-1'
+
+            $u = Set-midPointUser $u -Replace @{ "extension/$item" = 'mptest-2' } -PassThru
+            Write-Host "extension after replace: $(Format-Json (Get-ModuleProperty $u.Raw 'extension'))"
+            Get-ModuleProperty (Get-ModuleProperty $u.Raw 'extension') $item | Should -Be 'mptest-2'
+
+            $u = Set-midPointUser $u -Replace @{ "extension/$item" = '' } -PassThru
+            Get-ModuleProperty (Get-ModuleProperty $u.Raw 'extension') $item | Should -BeNullOrEmpty
+        }
+        finally { $u | Remove-midPointUser -Confirm:$false }
     }
 
     It 'finds the user by name (search with an Axiom text filter)' {
@@ -193,9 +241,17 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
 
     Context 'Role assignment' -Skip:(-not $hasRole) {
         It 'assigns the role with validTo' {
-            $a = Add-midPointRoleAssignment $user -Role $env:MIDPOINT_TEST_ROLE -ValidTo (Get-Date).AddDays(30) -PassThru
+            # -Relation default sends targetRef { type: 'c:RoleType', relation: 'org:default' } (prefixed QNames).
+            $a = Add-midPointRoleAssignment $user -Role $env:MIDPOINT_TEST_ROLE -Relation default -ValidTo (Get-Date).AddDays(30) -PassThru
             @($a).Count | Should -Be 1
             $a.ValidTo | Should -Not -BeNullOrEmpty
+        }
+
+        It 'reads the assignment with resolveNames and prefixed references' {
+            $a = Get-midPointRoleAssignment $user -Role $env:MIDPOINT_TEST_ROLE
+            Write-Host "Assignment targetRef as midPoint returns it: $(Format-Json (Get-ModuleProperty $a.Raw 'targetRef'))"
+            $a.Relation | Should -Be 'default'
+            $a.Role | Should -Be (Get-midPointRole $env:MIDPOINT_TEST_ROLE).Name -Because 'resolveNames fills targetRef.targetName'
         }
 
         It 'shows the account on the resource' -Skip:(-not $hasResource) {
@@ -238,6 +294,17 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
             @(Get-TestCase -State Open).Count | Should -Be 0
         }
 
+        It 'reads the account with resolveNames and shows the raw attributes' -Skip:(-not $hasResource) {
+            foreach ($noFetch in $false, $true) {
+                $s = Get-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE -NoFetch:$noFetch
+                Write-Host "Shadow$(if ($noFetch) { ' (noFetch)' }): resourceRef $(Format-Json (Get-ModuleProperty $s.Raw 'resourceRef'))"
+                Write-Host "Shadow$(if ($noFetch) { ' (noFetch)' }): attributes $(Format-Json (Get-ModuleProperty $s.Raw 'attributes'))"
+                $s.Resource | Should -Be $resourceName -Because 'resolveNames fills resourceRef.targetName'
+                # With noFetch the attributes are midPoint's cache, which may be empty.
+                if (-not $noFetch) { $s.Attributes.Count | Should -BeGreaterThan 0 }
+            }
+        }
+
         It 'changes the assignment validity' {
             $a = Set-midPointRoleAssignment $user -Role $env:MIDPOINT_TEST_ROLE -ClearValidTo -PassThru
             $a.ValidTo | Should -BeNullOrEmpty
@@ -269,7 +336,25 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
             Write-Progress -Activity "Waiting for the account of $name to be removed" -Completed
             $info = if ($state) { $state } else { "still active: $(($live | ForEach-Object { "$($_.Name) (exists=$($_.Exists), status=$($_.AdministrativeStatus))" }) -join ', ')" }
             Write-Host "Account after removing the role: $info"
+            $script:accountState = $state
             $state | Should -Not -BeNullOrEmpty -Because 'midPoint deletes or disables the account when the role is removed'
+        }
+
+        It 'keeps the deleted account as a dead shadow (Get-midPointShadow -IncludeDead)' -Skip:(-not $hasResource) {
+            if ($accountState -ne 'deleted') { Set-ItResult -Skipped -Because "the account was not deleted ($accountState)"; return }
+            $u = Get-midPointUser -Oid $user.Oid
+            Write-Host "linkRef of the user after the delete: $(Format-Json @(Get-ModuleProperty $u.Raw 'linkRef'))"
+            $all = @(Get-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE -IncludeDead -NoFetch)
+            foreach ($s in $all) {
+                $raw = $s.Raw
+                Write-Host "Shadow $($s.Oid): dead=$(Get-ModuleProperty $raw 'dead'), exists=$(Get-ModuleProperty $raw 'exists'), pending=$(Format-Json @(Get-ModuleProperty $raw 'pendingOperation' | ForEach-Object { [ordered]@{ executionStatus = (Get-ModuleProperty $_ 'executionStatus'); resultStatus = (Get-ModuleProperty $_ 'resultStatus'); changeType = (Get-ModuleProperty (Get-ModuleProperty $_ 'delta') 'changeType') } }))"
+            }
+            if ($all.Count -eq 0) {
+                Set-ItResult -Inconclusive -Because 'midPoint no longer links a shadow of the deleted account to the user'
+                return
+            }
+            @($all | Where-Object Dead).Count | Should -BeGreaterThan 0 -Because 'the deleted account is kept as a dead shadow'
+            @(Get-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE -NoFetch) | Should -BeNullOrEmpty -Because 'without -IncludeDead dead shadows are skipped'
         }
     }
 }

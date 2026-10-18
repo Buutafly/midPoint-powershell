@@ -44,6 +44,7 @@ Describe 'Role cmdlets' {
         $a.Count | Should -Be 2
         $a[0].Role | Should -Be 'Some Role'
         $a[0].AssignmentId | Should -Be 3
+        $a[0].Relation | Should -Be 'default'
         $a[0].ValidTo | Should -BeOfType [datetime]
         $a[1].Relation | Should -Be 'manager'
     }
