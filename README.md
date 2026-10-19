@@ -121,11 +121,14 @@ Role and org assignments have their own status and validity (`Add-` / `Set-midPo
 
 ## Authentication and security
 
-- `Connect-midPoint` uses HTTP Basic authentication, midPoint's default for the REST API. Use https.
-- The credential is only kept in memory for the current PowerShell session; nothing is written to disk.
-  `Disconnect-midPoint` removes it.
-- `-SkipCertificateCheck` is meant for test systems with self-signed certificates only.
-- `-Verbose` shows method and URL of each request, never headers. `-Debug` also shows request bodies,
+- `Connect-midPoint` uses HTTP Basic authentication (`-Credential`), midPoint's default for the REST API, or an
+  access token from an OIDC identity provider such as Entra ID or Keycloak (`-Issuer` / `-TokenEndpoint` with
+  `-ClientCredential`, client credentials flow; see [docs/oidc.md](docs/oidc.md)). Use https.
+- The credential (password, or client secret and access token) is only kept in memory for the current PowerShell
+  session; nothing is written to disk. `Disconnect-midPoint` removes it. Tokens are renewed automatically.
+- `-SkipCertificateCheck` is meant for test systems with self-signed certificates only (midPoint only; the identity
+  provider's certificate is always checked).
+- `-Verbose` shows method and URL of each request, never headers or tokens. `-Debug` also shows request bodies,
   with password values masked.
 
 ## Development

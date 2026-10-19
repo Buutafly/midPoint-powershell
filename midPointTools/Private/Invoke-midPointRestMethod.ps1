@@ -1,6 +1,6 @@
 function Invoke-midPointRestMethod {
-    # The only place that talks to midPoint. Builds the URL and the Basic header from the
-    # current session, sends JSON, and turns midPoint errors into terminating errors.
+    # The only place that talks to midPoint. Builds the URL and the Authorization header (Basic, or Bearer
+    # with token renewal) from the current session, sends JSON, and turns midPoint errors into terminating errors.
     # Returns an object with StatusCode, Headers and Body.
     [CmdletBinding()]
     param(
@@ -36,17 +36,9 @@ function Invoke-midPointRestMethod {
         }
     }
 
-    $credential = $session.Credential
-    $pair = '{0}:{1}' -f $credential.UserName, $credential.GetNetworkCredential().Password
-    $headers = @{
-        Authorization = 'Basic ' + [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($pair))
-        Accept        = 'application/json'
-    }
-
     $httpParams = @{
         Method               = $Method
         Uri                  = $uri
-        Headers              = $headers
         SkipCertificateCheck = [bool]$session.SkipCertificateCheck
     }
     if ($session.TimeoutSec) {
@@ -57,21 +49,41 @@ function Invoke-midPointRestMethod {
         Write-Debug ("midPoint request body: " + ($httpParams.Body -replace '"clearValue":"(\\.|[^"\\])*"', '"clearValue":"***"'))
     }
 
-    Write-Verbose "midPoint: $Method $uri"
-    try {
-        $response = Invoke-midPointHttp @httpParams
-    }
-    catch {
-        $record = [System.Management.Automation.ErrorRecord]::new(
-            [System.Net.Http.HttpRequestException]::new("midPoint request $Method $uri failed: $($_.Exception.Message)", $_.Exception),
-            'midPointConnectionFailed',
-            [System.Management.Automation.ErrorCategory]::ConnectionError,
-            $uri)
-        throw $record
-    }
+    # Bearer: a rejected token that was not just issued is renewed once and the request repeated.
+    $retried = $false
+    while ($true) {
+        $renewed = $false
+        $httpParams.Headers = @{
+            Authorization = Get-midPointAuthorizationHeader -Session $session -Renewed ([ref]$renewed)
+            Accept        = 'application/json'
+        }
 
-    $status = [int]$response.StatusCode
-    Write-Verbose "midPoint: HTTP $status"
+        Write-Verbose "midPoint: $Method $uri"
+        try {
+            $response = Invoke-midPointHttp @httpParams
+        }
+        catch {
+            $record = [System.Management.Automation.ErrorRecord]::new(
+                [System.Net.Http.HttpRequestException]::new("midPoint request $Method $uri failed: $($_.Exception.Message)", $_.Exception),
+                'midPointConnectionFailed',
+                [System.Management.Automation.ErrorCategory]::ConnectionError,
+                $uri)
+            throw $record
+        }
+        finally {
+            $httpParams.Headers = $null
+        }
+
+        $status = [int]$response.StatusCode
+        Write-Verbose "midPoint: HTTP $status"
+        if ($status -eq 401 -and $session.AuthType -eq 'Bearer' -and -not $renewed -and -not $retried) {
+            Write-Verbose "midPoint: access token rejected ($(Get-midPointHeaderValue $response.Headers 'WWW-Authenticate')), renewing it and retrying once"
+            $retried = $true
+            Request-midPointSessionToken -Session $session
+            continue
+        }
+        break
+    }
 
     if ($status -ge 400) {
         $message = Get-midPointErrorMessage -Body $response.Body
@@ -85,6 +97,12 @@ function Invoke-midPointRestMethod {
         }
         $text = "midPoint returned HTTP $status for $Method $Path"
         if ($message) { $text = "$text`: $message" }
+        elseif ($status -eq 401 -and $session.AuthType -eq 'Bearer') {
+            $text = "$text`: access token rejected"
+            $challenge = Get-midPointHeaderValue $response.Headers 'WWW-Authenticate'
+            if ($challenge) { $text = "$text ($challenge)" }
+            $text = "$text. Check that midPoint accepts tokens of this identity provider (security policy, REST sequence) and that a midPoint user is named after the token's user name claim"
+        }
         elseif ($status -eq 401) { $text = "$text`: login rejected, check user name, password and that the user may use REST" }
         $exception = [System.Exception]::new($text)
         $exception.Data['StatusCode'] = $status
@@ -136,4 +154,23 @@ function Get-midPointErrorMessage {
     $raw = ConvertTo-Json -InputObject $Body -Depth 10 -Compress
     if ($raw.Length -gt 500) { $raw = $raw.Substring(0, 500) + '...' }
     $raw
+}
+
+function Get-midPointHeaderValue {
+    # One response header as a string (several values joined), or '' when missing.
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [AllowNull()]
+        [System.Collections.IDictionary] $Headers,
+
+        [Parameter(Mandatory)]
+        [string] $Name
+    )
+
+    if (-not $Headers) { return '' }
+    foreach ($key in $Headers.Keys) {
+        if ($key -eq $Name) { return (@($Headers[$key]) -join ', ') }
+    }
+    ''
 }

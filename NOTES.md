@@ -33,10 +33,11 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
      run 8. Done, unit tests green; the integration test's extension check reads `Extension` too (next run).
    - `feature/user-password`: `Set-midPointUserPassword -Identity -NewPassword [-ForceChange]` in the style of
      `Set-ADAccountPassword -Reset`. Creating users without a password stays possible (`-Password` is optional).
-   - `feature/oidc-login`: OIDC client credentials login for `Connect-midPoint` (bearer token). Research and design
-     done, nothing built yet: see [docs/oidc.md](docs/oidc.md) on that branch (plan, decisions, open questions for
-     the integration run). Next: build as planned, unit tests, prepare the `MIDPOINT_TOKEN_*` integration test,
-     pull request into `main`.
+   - `feature/oidc-login`: OIDC client credentials login for `Connect-midPoint` (bearer token). Built with unit
+     tests (green) as planned in [docs/oidc.md](docs/oidc.md); pull request into `main`. Next: the user sets up a
+     client at the IdP and the `oidc` module in midPoint, runs `Tests/Integration/midPoint.Token.Integration.Tests.ps1`
+     (`MIDPOINT_TOKEN_*`) and pastes the output; it answers the open questions in `docs/oidc.md`, which then go to
+     `docs/rest-notes.md`.
 2. Open from run 3: on a manual resource the user once had no linked shadow 180 s after the assignment (not seen
    since run 6).
 
