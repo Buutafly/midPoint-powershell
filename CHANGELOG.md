@@ -10,6 +10,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), ver
   another relation, with assignment status and validity).
 - Example org `midPointTools Test Org` for the integration tests; the example API role may assign it.
 - `Extension` property on user objects: the user's extension items by name (`$u.Extension.costCenter`).
+- Token login: `Connect-midPoint -Issuer` / `-TokenEndpoint` with `-ClientCredential` and `-Scope` (OIDC client
+  credentials, e.g. Entra ID or Keycloak). The token is sent as Bearer and renewed automatically;
+  `Get-midPointSession` shows `TokenExpiresAt`. See `docs/oidc.md`.
 
 ## [0.1.0] - 2026-10-18
 

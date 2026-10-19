@@ -229,6 +229,10 @@
               <ListItem><PropertyName>Uri</PropertyName></ListItem>
               <ListItem><PropertyName>UserName</PropertyName></ListItem>
               <ListItem><PropertyName>AuthType</PropertyName></ListItem>
+              <ListItem>
+                <PropertyName>TokenExpiresAt</PropertyName>
+                <ItemSelectionCondition><ScriptBlock>$_.AuthType -eq 'Bearer'</ScriptBlock></ItemSelectionCondition>
+              </ListItem>
               <ListItem><PropertyName>SkipCertificateCheck</PropertyName></ListItem>
               <ListItem><PropertyName>TimeoutSec</PropertyName></ListItem>
               <ListItem><PropertyName>ConnectedAt</PropertyName></ListItem>

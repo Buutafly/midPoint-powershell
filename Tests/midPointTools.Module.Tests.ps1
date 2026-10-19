@@ -60,7 +60,7 @@ Describe 'Help for <_>' -ForEach $exportedCommands {
 
 Describe 'Public repository hygiene' {
     It 'contains no URLs other than example and documentation hosts' {
-        $allowed = 'example\.com|example\.org|evolveum\.com|github\.com/Buutafly|powershellgallery\.com|w3\.org|schemas\.microsoft\.com|prism\.evolveum|creativecommons\.org|opensource\.org|keepachangelog\.com|semver\.org|learn\.microsoft\.com|pester\.dev|localhost'
+        $allowed = 'example\.com|example\.org|evolveum\.com|github\.com/Buutafly|powershellgallery\.com|w3\.org|schemas\.microsoft\.com|prism\.evolveum|creativecommons\.org|opensource\.org|keepachangelog\.com|semver\.org|learn\.microsoft\.com|login\.microsoftonline\.com|pester\.dev|localhost'
         $root = Join-Path $PSScriptRoot '..'
         # Local, git-ignored files (*.local.ps1 with real settings, test results) are not published.
         $files = Get-ChildItem $root -Recurse -File -Include '*.ps1', '*.psm1', '*.psd1', '*.ps1xml', '*.md', '*.yml', '*.xml' |

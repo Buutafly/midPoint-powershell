@@ -105,3 +105,12 @@ The extension test needs an extension item that exists on your instance, so it o
 `MIDPOINT_TEST_EXTENSION_ITEM` names one: a single-valued string item of `UserType`, given by its local name
 (e.g. `costCenter`, no namespace). The test sets it with `New-midPointUser -Property @{ 'extension/<item>' = ... }`,
 changes and clears it with `Set-midPointUser -Replace`. The example API role already allows this (no item limits).
+
+## Token login (OIDC)
+
+`Tests/Integration/midPoint.Token.Integration.Tests.ps1` logs in with an access token (client credentials) when
+`MIDPOINT_TOKEN_CLIENT_ID`, `MIDPOINT_TOKEN_CLIENT_SECRET` and `MIDPOINT_TOKEN_ISSUER` (or `MIDPOINT_TOKEN_ENDPOINT`)
+are set; the other variables are in the header of that file and in `settings.example.ps1`. It needs a client at the
+identity provider, an `oidc` module in midPoint's security policy and a midPoint user named after the token's user
+name claim with the role `midPointTools API (test)`: see [oidc.md](oidc.md). It prints the token's claims (never the
+token), creates and deletes `MPTEST-<random>-TOK`, and shows midPoint's answers to bad tokens.

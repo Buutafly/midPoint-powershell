@@ -12,3 +12,14 @@ $env:MIDPOINT_TEST_ORG = 'midPointTools Test Org'
 
 # Optional: a single-valued string extension item of UserType on your instance (local name, no namespace).
 # $env:MIDPOINT_TEST_EXTENSION_ITEM = 'costCenter'
+
+# Optional: token login (OIDC client credentials, docs/oidc.md). Tests/Integration/midPoint.Token.Integration.Tests.ps1
+# runs when client ID, secret and issuer (or token endpoint) are set.
+# $env:MIDPOINT_TOKEN_ISSUER = 'https://idp.example.com/realms/example'    # or https://login.microsoftonline.com/<tenant>/v2.0
+# $env:MIDPOINT_TOKEN_ENDPOINT = ''        # instead of the issuer: the token URL
+# $env:MIDPOINT_TOKEN_CLIENT_ID = ''
+# $env:MIDPOINT_TOKEN_CLIENT_SECRET = ''   # never commit a secret
+# $env:MIDPOINT_TOKEN_SCOPE = ''           # Entra ID: api://<midPoint app ID>/.default
+# $env:MIDPOINT_TOKEN_EXPECTED_USER = 'midpointtools-api'
+# $env:MIDPOINT_TOKEN_OTHER_SCOPE = ''     # e.g. the .default scope of Microsoft Graph: is aud checked?
+# $env:MIDPOINT_TOKEN_URL_SUFFIX = ''      # urlSuffix of a separate REST sequence for the token
