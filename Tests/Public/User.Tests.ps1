@@ -37,6 +37,21 @@ Describe 'User cmdlets' {
             $u.EffectiveStatus | Should -Be 'enabled'
         }
 
+        It 'returns extension items with plain keys (prefix removed, single values unwrapped)' {
+            $ext = '{ "@ns": "http://example.com/xml/ns/extension", "costCenter": "4711", "ext:building": ["B1"], "tag": ["a", "b"] }'
+            Add-TestRoute "^GET users/$UserOid$" (New-TestResponse -Json (Get-TestUserJson -Extension $ext))
+            $u = Get-midPointUser -Oid $UserOid
+            $u.Extension.costCenter | Should -Be '4711'
+            $u.Extension.building | Should -Be 'B1'
+            $u.Extension.tag | Should -Be @('a', 'b')
+            $u.Extension.Keys | Should -Not -Contain '@ns'
+        }
+
+        It 'returns an empty Extension when the user has none' {
+            Add-TestRoute "^GET users/$UserOid$" (New-TestResponse -Json (Get-TestUserJson))
+            (Get-midPointUser -Oid $UserOid).Extension.Count | Should -Be 0
+        }
+
         It 'passes -Filter and -MaxResults' {
             Add-TestRoute '^POST users/search$' (New-TestResponse -Json $searchJack)
             $null = Get-midPointUser -Filter 'name startsWith "MPTEST-"' -MaxResults 10

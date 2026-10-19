@@ -5,7 +5,7 @@
     Author               = 'Buutafly'
     CompanyName          = 'Community'
     Copyright            = '(c) 2026 Buutafly. MIT License.'
-    Description          = 'PowerShell cmdlets for the Evolveum midPoint REST API: users, activation, role assignments, account checks and cases for admin tasks and test scripts.'
+    Description          = 'PowerShell cmdlets for the Evolveum midPoint REST API: users, activation, role and org assignments, account checks and cases for admin tasks and test scripts.'
     PowerShellVersion    = '7.2'
     CompatiblePSEditions = @('Core')
     FormatsToProcess     = @('midPointTools.Format.ps1xml')
@@ -27,6 +27,11 @@
         'Add-midPointRoleAssignment'
         'Set-midPointRoleAssignment'
         'Remove-midPointRoleAssignment'
+        'Get-midPointOrg'
+        'Get-midPointOrgAssignment'
+        'Add-midPointOrgAssignment'
+        'Set-midPointOrgAssignment'
+        'Remove-midPointOrgAssignment'
         'Get-midPointResource'
         'Get-midPointShadow'
         'Test-midPointShadow'

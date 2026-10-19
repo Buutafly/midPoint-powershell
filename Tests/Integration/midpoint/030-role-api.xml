@@ -6,6 +6,7 @@
   - use the REST API and read itself (Connect-midPoint reads GET /self),
   - read, create, change and delete users whose name starts with MPTEST-,
   - assign and unassign only the test role, and read it,
+  - assign and unassign the test org (member and manager), and read it,
   - read the test resource (by name, without contacting the connector) and the connectors (connector type),
   - read, create, change and delete shadows (accounts) on the test resource,
   - read and delete the cases of the test resource, and complete the work items assigned to it.
@@ -77,6 +78,41 @@
             <filter>
                 <q:inOid>
                     <q:value>6d707400-0000-4000-8000-000000000002</q:value>
+                </q:inOid>
+            </filter>
+        </object>
+    </authorization>
+
+    <authorization>
+        <!-- No <relation>: the authorization then applies to all relations (member, manager, ...). -->
+        <name>test-org-assign</name>
+        <phase>request</phase>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#assign</action>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#unassign</action>
+        <object>
+            <type>UserType</type>
+            <filter>
+                <q:text>name startsWith "MPTEST-"</q:text>
+            </filter>
+        </object>
+        <target>
+            <type>OrgType</type>
+            <filter>
+                <q:inOid>
+                    <q:value>6d707400-0000-4000-8000-000000000005</q:value>
+                </q:inOid>
+            </filter>
+        </target>
+    </authorization>
+
+    <authorization>
+        <name>test-org-read</name>
+        <action>http://midpoint.evolveum.com/xml/ns/public/security/authorization-model-3#read</action>
+        <object>
+            <type>OrgType</type>
+            <filter>
+                <q:inOid>
+                    <q:value>6d707400-0000-4000-8000-000000000005</q:value>
                 </q:inOid>
             </filter>
         </object>

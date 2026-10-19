@@ -17,6 +17,7 @@ function ConvertTo-midPointUserObject {
             EffectiveStatus      = Get-midPointProperty $activation 'effectiveStatus'
             ValidFrom            = ConvertFrom-midPointDateTime (Get-midPointProperty $activation 'validFrom')
             ValidTo              = ConvertFrom-midPointDateTime (Get-midPointProperty $activation 'validTo')
+            Extension            = ConvertFrom-midPointItemContainer (Get-midPointProperty $InputObject 'extension')
             Raw                  = $InputObject
         }
     }
@@ -60,11 +61,30 @@ function ConvertTo-midPointRoleObject {
     }
 }
 
+function ConvertTo-midPointOrgObject {
+    [CmdletBinding()]
+    param([Parameter(Mandatory, ValueFromPipeline)] [object] $InputObject)
+
+    process {
+        [pscustomobject]@{
+            PSTypeName  = 'midPointTools.Org'
+            Oid         = [string](Get-midPointProperty $InputObject 'oid')
+            Name        = ConvertFrom-midPointPolyString (Get-midPointProperty $InputObject 'name')
+            DisplayName = ConvertFrom-midPointPolyString (Get-midPointProperty $InputObject 'displayName')
+            Identifier  = Get-midPointProperty $InputObject 'identifier'
+            Description = Get-midPointProperty $InputObject 'description'
+            Raw         = $InputObject
+        }
+    }
+}
+
 function ConvertTo-midPointAssignmentObject {
+    # -Kind Role gives Role / RoleOid, -Kind Org gives Org / OrgOid (pipeline binding to -Role / -Org).
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)] [object] $Assignment,
-        [Parameter(Mandatory)] [object] $User
+        [Parameter(Mandatory)] [object] $User,
+        [ValidateSet('Role', 'Org')] [string] $Kind = 'Role'
     )
 
     $targetRef = Get-midPointProperty $Assignment 'targetRef'
@@ -72,12 +92,12 @@ function ConvertTo-midPointAssignmentObject {
     # A reference without relation has the default relation.
     $relation = ConvertFrom-midPointQName (Get-midPointProperty $targetRef 'relation')
     if (-not $relation) { $relation = 'default' }
-    [pscustomobject]@{
-        PSTypeName           = 'midPointTools.RoleAssignment'
+    $result = [ordered]@{
+        PSTypeName           = "midPointTools.${Kind}Assignment"
         User                 = ConvertFrom-midPointPolyString (Get-midPointProperty $User 'name')
         UserOid              = [string](Get-midPointProperty $User 'oid')
-        Role                 = ConvertFrom-midPointPolyString (Get-midPointProperty $targetRef 'targetName')
-        RoleOid              = [string](Get-midPointProperty $targetRef 'oid')
+        $Kind                = ConvertFrom-midPointPolyString (Get-midPointProperty $targetRef 'targetName')
+        "${Kind}Oid"         = [string](Get-midPointProperty $targetRef 'oid')
         Relation             = $relation
         AssignmentId         = Get-midPointContainerId $Assignment
         AdministrativeStatus = Get-midPointProperty $activation 'administrativeStatus'
@@ -86,11 +106,13 @@ function ConvertTo-midPointAssignmentObject {
         ValidTo              = ConvertFrom-midPointDateTime (Get-midPointProperty $activation 'validTo')
         Raw                  = $Assignment
     }
+    [pscustomobject]$result
 }
 
-function ConvertFrom-midPointAttributeContainer {
-    # Shadow 'attributes' -> hashtable. Keys lose their namespace prefix ('ri:mail' -> 'mail'),
-    # single-element arrays become scalars. midPoint 4.10 sends plain keys with an '@ns' entry (run 8).
+function ConvertFrom-midPointItemContainer {
+    # Shadow 'attributes' or an object's 'extension' -> hashtable. Keys lose their namespace prefix
+    # ('ri:mail' -> 'mail'), single-element arrays become scalars. midPoint 4.10 sends plain keys with an
+    # '@ns' entry (run 8).
     [CmdletBinding()]
     [OutputType([hashtable])]
     param([AllowNull()] [object] $Attributes)
@@ -125,14 +147,14 @@ function ConvertTo-midPointShadowObject {
             ConvertFrom-midPointQName (Get-midPointProperty (Get-midPointProperty $_ 'delta') 'changeType')
         } | Where-Object { $_ })
 
-    $attributes = ConvertFrom-midPointAttributeContainer (Get-midPointProperty $InputObject 'attributes')
+    $attributes = ConvertFrom-midPointItemContainer (Get-midPointProperty $InputObject 'attributes')
     if ($attributes.Count -eq 0) {
         # A shadow that only exists as a pending 'add' has its values in the delta.
         $add = $pending | Where-Object { (ConvertFrom-midPointQName (Get-midPointProperty (Get-midPointProperty $_ 'delta') 'changeType')) -eq 'add' } |
             Select-Object -First 1
         if ($add) {
             $objectToAdd = Get-midPointProperty (Get-midPointProperty $add 'delta') 'objectToAdd'
-            $attributes = ConvertFrom-midPointAttributeContainer (Get-midPointProperty $objectToAdd 'attributes')
+            $attributes = ConvertFrom-midPointItemContainer (Get-midPointProperty $objectToAdd 'attributes')
         }
     }
     [pscustomobject]@{

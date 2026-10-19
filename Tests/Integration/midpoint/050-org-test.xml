@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  midPointTools integration tests: the org the tests assign to their test user (as member and as manager).
+  It induces nothing.
+-->
+<org oid="6d707400-0000-4000-8000-000000000005"
+        xmlns="http://midpoint.evolveum.com/xml/ns/public/common/common-3">
+
+    <name>midPointTools Test Org</name>
+    <description>Assigned by the midPointTools integration tests. Induces nothing.</description>
+    <displayName>midPointTools Test Org</displayName>
+    <identifier>MPTEST-ORG</identifier>
+</org>
