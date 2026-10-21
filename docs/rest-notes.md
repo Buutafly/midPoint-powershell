@@ -117,6 +117,17 @@ authorization (`AUTZ.n> Evaluating authorization ...`) with its decision.
 
 ## To verify on midPoint 4.10 (TODO)
 
+Recompute (`Invoke-midPointRecompute`, from 2026-10-21):
+
+- [ ] `PATCH users/{oid}?options=reconcile` with `{ "objectModification": {} }` recreates an account that was deleted
+      while the role stays assigned (manual resource: a new add case). Seen on a 4.10.4 instance outside the
+      integration test; `POST users/{oid}/recompute` does not exist on 4.10 (HTTP 404).
+- [ ] The same empty modification **without** `options=reconcile`: accepted (status code?) and does it recreate the
+      account? The integration test prints both. Decides whether `Invoke-midPointRecompute` gets a `-NoReconcile`
+      switch; until then reconcile is the only mode.
+- [ ] `DELETE shadows/{oid}` of a linked account (role still assigned) deletes it on the resource; on the manual
+      resource it opens a delete case (used by the recompute test, later by `Remove-midPointShadow`).
+
 Run `Tests/Integration` with `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` set for the remaining items
 (`MIDPOINT_TEST_EXTENSION_ITEM` for the extension item). The integration test prints the raw JSON of each item.
 

@@ -65,7 +65,11 @@ Tested with midPoint 4.10. You need an administrator account on the test instanc
    account (pending), completes the case like an operator and checks that the account now exists.
 4. Changes the assignment's validity and removes the assignment. midPoint opens a case to delete the account;
    the test completes it, checks that the account is gone and that its shadow is kept as a dead shadow.
-5. At the end (also after a failure) it completes any case of its account that is still open, deletes the user and
+5. Recompute: recomputes the user with `Invoke-midPointRecompute`. A second user `MPTEST-<random>-RC` gets the role
+   and its account (case completed); the test deletes the account (`DELETE shadows/<oid>`, delete case completed)
+   while the role stays assigned, sends an empty modification without reconcile and prints whether that recreates
+   the account, then runs `Invoke-midPointRecompute` (reconcile) and checks that the account is created again.
+6. At the end (also after a failure) it completes any case of its account that is still open, deletes the user and
    deletes the cases of its account.
 
 With `MIDPOINT_TEST_ORG` set, the test also assigns `midPointTools Test Org` as member and as manager, changes the

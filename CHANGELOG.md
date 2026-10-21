@@ -10,6 +10,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), ver
   another relation, with assignment status and validity).
 - Example org `midPointTools Test Org` for the integration tests; the example API role may assign it.
 - `Extension` property on user objects: the user's extension items by name (`$u.Extension.costCenter`).
+- `Invoke-midPointRecompute`: recomputes a user with reconciliation (`PATCH users/<oid>?options=reconcile` with an
+  empty modification), like the recompute task: mappings and provisioning run, provisioning errors are reported.
 
 ## [0.1.0] - 2026-10-18
 
