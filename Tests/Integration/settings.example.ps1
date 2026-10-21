@@ -12,3 +12,6 @@ $env:MIDPOINT_TEST_ORG = 'midPointTools Test Org'
 
 # Optional: a single-valued string extension item of UserType on your instance (local name, no namespace).
 # $env:MIDPOINT_TEST_EXTENSION_ITEM = 'costCenter'
+
+# Optional: an extension item of OrgType with a value on the test org (Test Org 2 if MIDPOINT_TEST_ORG2 is set); only read.
+# $env:MIDPOINT_TEST_ORG_EXTENSION_ITEM = 'costCenter'

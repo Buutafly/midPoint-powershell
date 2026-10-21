@@ -125,6 +125,11 @@ authorization (`AUTZ.n> Evaluating authorization ...`) with its decision.
 
 ## To verify on midPoint 4.10 (TODO)
 
+Org extension (`feature/org-extension`, from 2026-10-21):
+
+- [ ] `GET orgs/{oid}` and `POST orgs/search` both return the org's `extension` with plain keys (as for users in
+      run 8), so `Get-midPointOrg` fills `Extension` without an extra GET per search result. The test prints both.
+
 Run `Tests/Integration` with `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` set for the remaining items
 (`MIDPOINT_TEST_EXTENSION_ITEM` for the extension item). The integration test prints the raw JSON of each item.
 

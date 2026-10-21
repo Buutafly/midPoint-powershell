@@ -6,6 +6,8 @@ function Get-midPointOrg {
     .DESCRIPTION
     Gets orgs by name, by OID, by an Axiom query filter, or all orgs.
     -Name returns nothing when no org has that name; -Oid stops with an error when the OID does not exist.
+    The org's extension items are in the Extension property, by name without namespace
+    ($org.Extension.costCenter); single values are unwrapped.
 
     .PARAMETER Name
     The exact org name.
@@ -27,6 +29,9 @@ function Get-midPointOrg {
 
     .EXAMPLE
     Get-midPointOrg -Filter 'name startsWith "OU "' | Select-Object Name, Identifier, Oid
+
+    .EXAMPLE
+    (Get-midPointOrg 'Some Org').Extension.costCenter
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'All', Justification = 'Selects the parameter set.')]
     [CmdletBinding(DefaultParameterSetName = 'Name')]

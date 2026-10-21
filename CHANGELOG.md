@@ -13,6 +13,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), ver
 - `Invoke-midPointRecompute`: recomputes a user with reconciliation (`PATCH users/<oid>?options=reconcile` with an
   empty modification), like the recompute task: mappings and provisioning run, provisioning errors are reported.
   `-NoReconcile` skips the reconciliation (the resources are not read).
+- `Extension` property on org objects (`(Get-midPointOrg 'Some Org').Extension.costCenter`), like on users.
 
 ## [0.1.0] - 2026-10-18
 
