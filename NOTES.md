@@ -42,8 +42,8 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
      - `feature/assignment-batch`: `-Role` / `-Org` take several targets (one PATCH); `Move-midPointOrgAssignment
        -From -To` (one PATCH).
      - `feature/remove-shadow`: `Remove-midPointShadow` (`DELETE shadows/<oid>`; only shadow objects or OIDs;
-       404 = warning, 409 = error because midPoint also answers 409 for an assigned account). Unit tests green;
-       integration test prepared (account `MPTEST-…-SHD` without owner, created with `POST shadows`).
+       404 or dead shadow = warning, 409 = error because midPoint also answers 409 for an assigned account).
+       Run 18 green; a DELETE of a dead shadow opened another case, so dead shadows are now skipped (next run checks).
      - `feature/org-extension`: `Extension` on org objects.
 2. Open from run 3: on a manual resource the user once had no linked shadow 180 s after the assignment (not seen
    since run 6).

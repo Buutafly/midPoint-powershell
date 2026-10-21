@@ -70,8 +70,8 @@ Tested with midPoint 4.10. You need an administrator account on the test instanc
    the role with `validFrom` 20 seconds ahead (no account yet). Once that time has passed, `Invoke-midPointRecompute -NoReconcile`
    (RCA) and `Invoke-midPointRecompute` (RCB) must each request the account (RCB: case completed, account exists).
 6. Account delete: creates an account `MPTEST-<random>-SHD` without owner (`POST shadows`, add case completed),
-   deletes it with `Remove-midPointShadow` (delete case completed), checks that the shadow is dead or gone, and prints
-   what a second `Remove-midPointShadow` on it answers. An aborted run can leave this account on the test resource;
+   deletes it with `Remove-midPointShadow` (delete case completed), checks that the shadow is dead or gone, and that a
+   second `Remove-midPointShadow` on it only warns (no new case). An aborted run can leave this account on the test resource;
    the next run completes its open cases, a live leftover can be deleted in the GUI.
 7. At the end (also after a failure) it completes any case of its account that is still open, deletes the user and
    deletes the cases of its account.

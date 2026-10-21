@@ -578,13 +578,12 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
             ($null -eq $raw -or (Get-ModuleProperty $raw 'dead')) | Should -BeTrue -Because 'the account is deleted'
         }
 
-        It 'Remove-midPointShadow on the deleted account (printed)' {
+        It 'only warns for the deleted account (dead shadow, no new case)' {
+            # Run 18: a DELETE of the dead shadow opened another case on the manual resource; the cmdlet now skips it.
             if (-not $shdOid) { Set-ItResult -Skipped -Because 'the account was not created'; return }
-            $err = $null
-            try { Remove-midPointShadow $shdOid -Confirm:$false -WarningVariable w -WarningAction SilentlyContinue } catch { $err = $_ }
-            $result = if ($err) { "error HTTP $($err.Exception.Data['StatusCode']): $($err.Exception.Message)" } elseif ($w) { "warning: $w" } else { 'no error (dead shadow deleted)' }
-            Write-Host "Second Remove-midPointShadow: $result"
-            if ($manual) { Write-Host "Open cases after it: $(@(Get-TestCase -Account $shdName -State Open).Count)" }
+            Remove-midPointShadow $shdOid -Confirm:$false -WarningVariable w -WarningAction SilentlyContinue
+            "$w" | Should -BeLike '*already deleted*'
+            if ($manual) { @(Get-TestCase -Account $shdName -State Open).Count | Should -Be 0 -Because 'nothing was sent' }
         }
     }
 }

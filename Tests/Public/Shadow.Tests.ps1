@@ -205,6 +205,12 @@ Describe 'Shadow cmdlets' {
             Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 0 -Exactly -ParameterFilter { $Method -eq 'DELETE' }
         }
 
+        It 'warns and sends nothing for a dead shadow' {
+            Remove-midPointShadow $deadOid -Confirm:$false -WarningVariable w -WarningAction SilentlyContinue
+            "$w" | Should -BeLike '*already deleted*'
+            Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 0 -Exactly -ParameterFilter { $Method -eq 'DELETE' }
+        }
+
         It 'warns when the shadow is gone by the time of the delete (404 on DELETE)' {
             Add-TestRoute "^DELETE shadows/$ShadowOid$" (New-TestResponse -StatusCode 404 -Json '{ "message": "Object not found" }')
             Remove-midPointShadow $ShadowOid -Confirm:$false -WarningVariable w -WarningAction SilentlyContinue

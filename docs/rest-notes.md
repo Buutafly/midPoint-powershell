@@ -78,6 +78,12 @@ Reference: [midPoint REST API](https://docs.evolveum.com/midpoint/reference/inte
 - `DELETE shadows/{oid}` of an account that is still assigned → **HTTP 409** "Attempt to delete shadow(...) while it
   is assigned violates an assignment policy" (run 12, test resource without `projection` settings, i.e. midPoint's
   default assignment policy enforcement).
+- Account delete (run 18, 2026-10-21, `Remove-midPointShadow`): `POST shadows` with `{ "shadow": { resourceRef,
+  objectClass "ri:AccountObjectClass", kind, intent, attributes { "@ns": ".../resource/instance-3", username, mail } } }`
+  → HTTP 201, OID in `Location`; on the manual resource an add case. `DELETE shadows/{oid}` of that account (no owner)
+  opens a delete case; once completed the shadow is `dead: true`, `exists: false`. A second `DELETE` of the **dead**
+  shadow answers without error but opens **another** case, so `Remove-midPointShadow` skips dead shadows with a
+  warning. `DELETE` of an assigned account → HTTP 409 (assignment policy), as in run 12.
 - Run 3 on a manual resource: 180 s after assigning the role, the user had no linked shadow on that resource
   (neither live nor pending). Still to be analysed.
 
@@ -124,16 +130,6 @@ authorization (`AUTZ.n> Evaluating authorization ...`) with its decision.
 - With `consistency/refreshOnRead` the shadow picks up the closed case the next time it is read.
 
 ## To verify on midPoint 4.10 (TODO)
-
-Account delete (`Remove-midPointShadow`, from 2026-10-21):
-
-- [ ] `POST shadows` with `{ "shadow": { resourceRef, objectClass "ri:AccountObjectClass", kind, intent, attributes
-      { "@ns": ".../resource/instance-3", username, mail } } }` creates an account without owner (manual resource:
-      an add case); the OID is in the `Location` header.
-- [ ] `DELETE shadows/{oid}` of that account opens a delete case on the manual resource; after completing it the
-      shadow is dead (or gone).
-- [ ] What a second `DELETE shadows/{oid}` of the dead shadow answers (204, 404 or 409) – the test prints it.
-- [ ] `Remove-midPointShadow` on an assigned account stops with HTTP 409 (seen with a raw DELETE in run 12).
 
 Run `Tests/Integration` with `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` set for the remaining items
 (`MIDPOINT_TEST_EXTENSION_ITEM` for the extension item). The integration test prints the raw JSON of each item.

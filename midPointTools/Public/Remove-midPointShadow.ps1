@@ -13,7 +13,9 @@ function Remove-midPointShadow {
     Before the delete the cmdlet reads the shadow without contacting the resource (noFetch) to check that the
     OID is a shadow and to show its name and resource in the confirmation.
 
-    A shadow that no longer exists (HTTP 404) gives a warning, not an error. midPoint refuses to delete an
+    A shadow that no longer exists (HTTP 404) or is dead (the account was already deleted; midPoint keeps such
+    shadows for a while) gives a warning, not an error, and nothing is sent: deleting a dead shadow again would
+    open another case on a manual resource (run 18). midPoint refuses to delete an
     account that is still assigned when the resource enforces assignments (HTTP 409, "... violates an
     assignment policy"); that and every other error stops the cmdlet. Remove the assignment instead.
     Asks for confirmation; use -Confirm:$false in scripts.
@@ -64,6 +66,10 @@ function Remove-midPointShadow {
         $resourceRef = Get-midPointProperty $raw 'resourceRef'
         if (-not $resourceRef) {
             throw [System.ArgumentException]::new("Object $oid is not a shadow (no resourceRef).")
+        }
+        if (Get-midPointProperty $raw 'dead') {
+            Write-Warning "Shadow $oid is dead: the account was already deleted."
+            return
         }
         $name = ConvertFrom-midPointPolyString (Get-midPointProperty $raw 'name')
         $resource = ConvertFrom-midPointPolyString (Get-midPointProperty $resourceRef 'targetName')
