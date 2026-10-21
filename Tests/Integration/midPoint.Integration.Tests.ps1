@@ -512,7 +512,7 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
             $script:extOrg = Get-midPointOrg $extOrgName
         }
 
-        It 'reads the extension item of the org by OID (GET orgs/<oid>)' {
+        It 'reads the extension item of the org by OID (GET orgs/{oid})' {
             $extOrg | Should -Not -BeNullOrEmpty -Because "the org '$extOrgName' must exist and be readable"
             $o = Get-midPointOrg -Oid $extOrg.Oid
             Write-Host "extension of '$extOrgName' (GET): $(Format-Json (Get-ModuleProperty $o.Raw 'extension'))"

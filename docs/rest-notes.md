@@ -78,6 +78,9 @@ Reference: [midPoint REST API](https://docs.evolveum.com/midpoint/reference/inte
 - `DELETE shadows/{oid}` of an account that is still assigned → **HTTP 409** "Attempt to delete shadow(...) while it
   is assigned violates an assignment policy" (run 12, test resource without `projection` settings, i.e. midPoint's
   default assignment policy enforcement).
+- Org extension (run 19, 2026-10-21): `GET orgs/{oid}` and `POST orgs/search` both return the org's `extension` with
+  plain keys (the search result also carries an `@ns` entry), so `Get-midPointOrg` fills `Extension` from a search
+  without an extra GET.
 - Run 3 on a manual resource: 180 s after assigning the role, the user had no linked shadow on that resource
   (neither live nor pending). Still to be analysed.
 
@@ -124,11 +127,6 @@ authorization (`AUTZ.n> Evaluating authorization ...`) with its decision.
 - With `consistency/refreshOnRead` the shadow picks up the closed case the next time it is read.
 
 ## To verify on midPoint 4.10 (TODO)
-
-Org extension (`feature/org-extension`, from 2026-10-21):
-
-- [ ] `GET orgs/{oid}` and `POST orgs/search` both return the org's `extension` with plain keys (as for users in
-      run 8), so `Get-midPointOrg` fills `Extension` without an extra GET per search result. The test prints both.
 
 Run `Tests/Integration` with `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` set for the remaining items
 (`MIDPOINT_TEST_EXTENSION_ITEM` for the extension item). The integration test prints the raw JSON of each item.

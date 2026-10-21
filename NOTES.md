@@ -42,8 +42,8 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
      - `feature/assignment-batch`: `-Role` / `-Org` take several targets (one PATCH); `Move-midPointOrgAssignment
        -From -To` (one PATCH).
      - `feature/remove-shadow`: `Remove-midPointShadow` (`DELETE shadows/<oid>`, 404 / 409 as warnings).
-     - `feature/org-extension`: `Extension` on org objects (same converter as users). Unit tests green;
-       integration test prepared (`MIDPOINT_TEST_ORG_EXTENSION_ITEM`, value on Test Org 2; GET and search compared).
+     - `feature/org-extension`: `Extension` on org objects (same converter as users). Integration run 19
+       green: GET and search both return the extension (`MIDPOINT_TEST_ORG_EXTENSION_ITEM`, value on Test Org 2).
 2. Open from run 3: on a manual resource the user once had no linked shadow 180 s after the assignment (not seen
    since run 6).
 
