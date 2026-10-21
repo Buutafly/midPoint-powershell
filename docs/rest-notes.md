@@ -117,6 +117,12 @@ authorization (`AUTZ.n> Evaluating authorization ...`) with its decision.
 
 ## To verify on midPoint 4.10 (TODO)
 
+Several assignment changes in one modification (`feature/assignment-batch`, from 2026-10-21):
+
+- [ ] Two `add` deltas on `assignment` (two orgs) in one PATCH, and two `delete { "@id": n }` deltas in one PATCH.
+- [ ] `delete { "@id": n }` of one org assignment plus `add` of another org in one PATCH (`Move-midPointOrgAssignment`):
+      `parentOrgRef` afterwards only has the new org. The integration test prints it.
+
 Run `Tests/Integration` with `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` set for the remaining items
 (`MIDPOINT_TEST_EXTENSION_ITEM` for the extension item). The integration test prints the raw JSON of each item.
 

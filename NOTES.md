@@ -34,6 +34,9 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
    - `feature/user-password`: `Set-midPointUserPassword -Identity -NewPassword [-ForceChange]` in the style of
      `Set-ADAccountPassword -Reset`. Creating users without a password stays possible (`-Password` is optional).
    - OIDC / bearer token login: in a separate session, on its own branch.
+   - `feature/assignment-batch` (gap of a consumer test script, after `feature/recompute`): `-Role` / `-Org` take
+     several targets (one PATCH); `Move-midPointOrgAssignment -From -To [-Relation]` (one PATCH). Unit tests green;
+     integration test prepared (`060-org-test-2.xml`, `MIDPOINT_TEST_ORG2`, API role re-import).
 2. Open from run 3: on a manual resource the user once had no linked shadow 180 s after the assignment (not seen
    since run 6).
 

@@ -52,10 +52,12 @@ Add-midPointRoleAssignment jdoe -Role 'Some Role' -ValidTo (Get-Date).AddDays(30
 Get-midPointRoleAssignment jdoe
 Set-midPointRoleAssignment jdoe -Role 'Some Role' -ClearValidTo
 Remove-midPointRoleAssignment jdoe -Role 'Some Role'
+Add-midPointRoleAssignment jdoe -Role 'Role A', 'Role B'          # one modification
 
 Add-midPointOrgAssignment jdoe -Org 'Some Org'                    # member
 Add-midPointOrgAssignment jdoe -Org 'Some Org' -Relation manager
 Get-midPointOrgAssignment jdoe
+Move-midPointOrgAssignment jdoe -From 'Some Org' -To 'Other Org'  # one modification
 
 Get-midPointShadow jdoe -Resource 'Some Resource'
 Remove-midPointUser jdoe
@@ -102,7 +104,7 @@ Get-midPointCase -Resource 'Manual Resource' -Account jdoe -State Open | Complet
 | Users | `Get-midPointUser`, `New-midPointUser`, `Set-midPointUser`, `Remove-midPointUser` |
 | Activation | `Enable-midPointUser`, `Disable-midPointUser`, `Unlock-midPointUser`, `Get-midPointUserActivation`, `Set-midPointUserActivation` |
 | Roles | `Get-midPointRole`, `Get-midPointRoleAssignment`, `Add-midPointRoleAssignment`, `Set-midPointRoleAssignment`, `Remove-midPointRoleAssignment` |
-| Orgs | `Get-midPointOrg`, `Get-midPointOrgAssignment`, `Add-midPointOrgAssignment`, `Set-midPointOrgAssignment`, `Remove-midPointOrgAssignment` |
+| Orgs | `Get-midPointOrg`, `Get-midPointOrgAssignment`, `Add-midPointOrgAssignment`, `Set-midPointOrgAssignment`, `Remove-midPointOrgAssignment`, `Move-midPointOrgAssignment` |
 | Resources | `Get-midPointResource` |
 | Accounts | `Get-midPointShadow`, `Test-midPointShadow`, `Wait-midPointShadow` |
 | Cases | `Get-midPointCase`, `Complete-midPointCase`, `Remove-midPointCase` |

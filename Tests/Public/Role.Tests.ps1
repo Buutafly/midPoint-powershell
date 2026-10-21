@@ -123,4 +123,61 @@ Describe 'Role cmdlets' {
         $w | Should -Match 'Nothing removed'
         Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 0 -Exactly -ParameterFilter { $Method -eq 'PATCH' }
     }
+
+    It 'Add-midPointRoleAssignment assigns several roles in one PATCH' {
+        Add-midPointRoleAssignment $UserOid -Role $RoleOid, $OtherOid -Relation manager -ValidTo ([datetime]::new(2027, 6, 30, 0, 0, 0, [System.DateTimeKind]::Utc))
+
+        Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 1 -Exactly -ParameterFilter { $Method -eq 'PATCH' }
+        Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 1 -Exactly -ParameterFilter {
+            if ($Method -ne 'PATCH') { return $false }
+            $d = Get-SentDelta $Body
+            $d.Count -eq 2 -and ($d.modificationType | Select-Object -Unique) -eq 'add' -and ($d.path | Select-Object -Unique) -eq 'assignment' -and
+            (@($d.value.targetRef.oid) -join ',') -eq "$RoleOid,$OtherOid" -and
+            ($d.value.targetRef.relation | Select-Object -Unique) -eq 'org:manager' -and
+            ([regex]::Matches($Body, '"validTo":"2027-06-30T00:00:00.000\+00:00"')).Count -eq 2
+        }
+    }
+
+    It 'Add-midPointRoleAssignment -PassThru returns the assignments of all given roles' {
+        $a = @(Add-midPointRoleAssignment $UserOid -Role $RoleOid, $OtherOid -PassThru)
+        @($a.Role | Sort-Object) | Should -Be @('Other Role', 'Some Role')
+    }
+
+    It 'Add-midPointRoleAssignment -WhatIf sends nothing for several roles' {
+        Add-midPointRoleAssignment $UserOid -Role $RoleOid, $OtherOid -WhatIf
+        Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 0 -Exactly -ParameterFilter { $Method -eq 'PATCH' }
+    }
+
+    It 'Remove-midPointRoleAssignment removes several roles in one PATCH' {
+        Remove-midPointRoleAssignment $UserOid -Role 'Some Role', $OtherOid
+
+        Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 1 -Exactly -ParameterFilter { $Method -eq 'PATCH' }
+        Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 1 -Exactly -ParameterFilter {
+            if ($Method -ne 'PATCH') { return $false }
+            $d = Get-SentDelta $Body
+            # Id 4 is an org assignment to the same OID and stays.
+            $d.Count -eq 2 -and ($d.modificationType | Select-Object -Unique) -eq 'delete' -and (@($d.value.'@id') -join ',') -eq '3,7'
+        }
+    }
+
+    It 'Remove-midPointRoleAssignment warns for a missing role and removes the others' {
+        Remove-midPointRoleAssignment $UserOid -Role $RoleOid, '99999999-9999-9999-9999-999999999999' -WarningVariable w -WarningAction SilentlyContinue
+        "$w" | Should -BeLike '*99999999-9999-9999-9999-999999999999*Nothing removed*'
+        Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 1 -Exactly -ParameterFilter {
+            $Method -eq 'PATCH' -and (@((Get-SentDelta $Body).value.'@id') -join ',') -eq '3'
+        }
+    }
+
+    It 'Remove-midPointRoleAssignment refuses -AssignmentId with several roles' {
+        { Remove-midPointRoleAssignment $UserOid -Role $RoleOid, $OtherOid -AssignmentId 3 } | Should -Throw '*single role*'
+        Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 0 -Exactly
+    }
+
+    It 'Remove-midPointRoleAssignment sends one PATCH per piped assignment' {
+        @(
+            [pscustomobject]@{ UserOid = $UserOid; RoleOid = $RoleOid; AssignmentId = 3 }
+            [pscustomobject]@{ UserOid = $UserOid; RoleOid = $OtherOid; AssignmentId = 7 }
+        ) | Remove-midPointRoleAssignment
+        Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 2 -Exactly -ParameterFilter { $Method -eq 'PATCH' }
+    }
 }
