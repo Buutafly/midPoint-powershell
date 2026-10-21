@@ -60,6 +60,8 @@ Get-midPointOrgAssignment jdoe
 Move-midPointOrgAssignment jdoe -From 'Some Org' -To 'Other Org'  # one modification
 
 Get-midPointShadow jdoe -Resource 'Some Resource'
+Invoke-midPointRecompute jdoe                                     # mappings and provisioning (reconcile)
+Invoke-midPointRecompute jdoe -NoReconcile                        # without reading the resources
 Remove-midPointUser jdoe
 ```
 
@@ -101,7 +103,7 @@ Get-midPointCase -Resource 'Manual Resource' -Account jdoe -State Open | Complet
 | Area | Cmdlets |
 |---|---|
 | Session | `Connect-midPoint`, `Disconnect-midPoint`, `Get-midPointSession` |
-| Users | `Get-midPointUser`, `New-midPointUser`, `Set-midPointUser`, `Remove-midPointUser` |
+| Users | `Get-midPointUser`, `New-midPointUser`, `Set-midPointUser`, `Remove-midPointUser`, `Invoke-midPointRecompute` |
 | Activation | `Enable-midPointUser`, `Disable-midPointUser`, `Unlock-midPointUser`, `Get-midPointUserActivation`, `Set-midPointUserActivation` |
 | Roles | `Get-midPointRole`, `Get-midPointRoleAssignment`, `Add-midPointRoleAssignment`, `Set-midPointRoleAssignment`, `Remove-midPointRoleAssignment` |
 | Orgs | `Get-midPointOrg`, `Get-midPointOrgAssignment`, `Add-midPointOrgAssignment`, `Set-midPointOrgAssignment`, `Remove-midPointOrgAssignment`, `Move-midPointOrgAssignment` |

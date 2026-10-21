@@ -146,6 +146,65 @@ Describe 'User cmdlets' {
         }
     }
 
+    Context 'Invoke-midPointRecompute' {
+        It 'sends an empty modification with options=reconcile' {
+            Add-TestRoute "^PATCH users/$UserOid\?options=reconcile$" (New-TestResponse -StatusCode 204)
+
+            $result = Invoke-midPointRecompute $UserOid
+
+            $result | Should -BeNullOrEmpty
+            Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 1 -Exactly -ParameterFilter {
+                $Method -eq 'PATCH' -and $Uri -like '*/users/*?options=reconcile' -and $Body -eq '{"objectModification":{}}'
+            }
+        }
+
+        It 'sends the empty modification without options with -NoReconcile' {
+            Add-TestRoute "^PATCH users/$UserOid$" (New-TestResponse -StatusCode 204)
+
+            Invoke-midPointRecompute $UserOid -NoReconcile
+
+            Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 1 -Exactly -ParameterFilter {
+                $Method -eq 'PATCH' -and $Uri -notmatch '\?' -and $Body -eq '{"objectModification":{}}'
+            }
+        }
+
+        It 'recomputes piped users by name and returns them with -PassThru' {
+            Add-TestRoute '^POST users/search$' (New-TestResponse -Json $searchJack)
+            Add-TestRoute "^PATCH users/$UserOid\?options=reconcile$" (New-TestResponse -StatusCode 204)
+            Add-TestRoute "^GET users/$UserOid" (New-TestResponse -Json (Get-TestUserJson))
+
+            $result = 'jack' | Invoke-midPointRecompute -PassThru
+
+            $result.Oid | Should -Be $UserOid
+            $result.PSObject.TypeNames | Should -Contain 'midPointTools.User'
+        }
+
+        It 'sends nothing with -WhatIf' {
+            Invoke-midPointRecompute $UserOid -WhatIf
+            Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 0 -Exactly
+        }
+
+        It 'stops with the status code when provisioning fails (HTTP 500)' {
+            Add-TestRoute "^PATCH users/$UserOid\?options=reconcile$" (New-TestResponse -StatusCode 500 -Json '{ "object": { "@type": "c:OperationResultType", "status": "fatal_error", "message": "Connector error: script failed" } }')
+
+            $err = $null
+            try { Invoke-midPointRecompute $UserOid -PassThru } catch { $err = $_ }
+
+            $err | Should -Not -BeNullOrEmpty
+            $err.Exception.Data['StatusCode'] | Should -Be 500
+            $err.Exception.Message | Should -BeLike '*Connector error: script failed*'
+            Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 0 -Exactly -ParameterFilter { $Method -eq 'GET' }
+        }
+
+        It 'warns on a partial error (HTTP 250)' {
+            Add-TestRoute "^PATCH users/$UserOid\?options=reconcile$" (New-TestResponse -StatusCode 250 -Json '{ "object": { "status": "partial_error", "message": "One resource failed" } }')
+
+            Invoke-midPointRecompute $UserOid -WarningVariable warnings -WarningAction SilentlyContinue
+
+            "$warnings" | Should -BeLike '*partial error*One resource failed*'
+        }
+    }
+
     Context 'Remove-midPointUser' {
         It 'deletes piped users' {
             Add-TestRoute '^POST users/search$' (New-TestResponse -Json $searchJack)
