@@ -17,6 +17,7 @@
         'New-midPointUser'
         'Set-midPointUser'
         'Remove-midPointUser'
+        'Invoke-midPointRecompute'
         'Enable-midPointUser'
         'Disable-midPointUser'
         'Unlock-midPointUser'

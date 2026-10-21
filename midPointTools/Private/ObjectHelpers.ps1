@@ -227,16 +227,25 @@ function New-midPointItemDelta {
 }
 
 function Invoke-midPointModify {
-    # PATCH <type>/<oid> with a list of item deltas.
+    # PATCH <type>/<oid> with a list of item deltas. No deltas send an empty modification
+    # ({ "objectModification": {} }), e.g. for a recompute with -Options reconcile.
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)] [string] $Type,
         [Parameter(Mandatory)] [string] $Oid,
-        [Parameter(Mandatory)] [object[]] $ItemDelta
+        [AllowEmptyCollection()] [object[]] $ItemDelta = @(),
+        [string[]] $Options
     )
 
-    $body = [ordered]@{ objectModification = [ordered]@{ itemDelta = @($ItemDelta) } }
-    $null = Invoke-midPointRestMethod -Method PATCH -Path ('{0}/{1}' -f $Type, [uri]::EscapeDataString($Oid)) -Body $body
+    $modification = [ordered]@{}
+    if (@($ItemDelta).Count -gt 0) { $modification.itemDelta = @($ItemDelta) }
+    $params = @{
+        Method = 'PATCH'
+        Path   = '{0}/{1}' -f $Type, [uri]::EscapeDataString($Oid)
+        Body   = [ordered]@{ objectModification = $modification }
+    }
+    if ($Options) { $params.Query = @{ options = $Options } }
+    $null = Invoke-midPointRestMethod @params
 }
 
 function Set-midPointNestedValue {

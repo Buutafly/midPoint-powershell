@@ -70,6 +70,14 @@ Reference: [midPoint REST API](https://docs.evolveum.com/midpoint/reference/inte
   - After the account is deleted (manual resource, case completed) the shadow stays linked with
     `"relation": "org:related"` and has `dead: true`, `exists: false`, both pending operations `completed` /
     `success`. `Get-midPointShadow` hides it, `-IncludeDead` returns it.
+- Recompute (runs 12 and 13, 2026-10-21): `PATCH users/{oid}?options=reconcile` with `{ "objectModification": {} }`
+  → HTTP 204; an empty modification **without** options is accepted too (HTTP 204). Both request the account of an
+  assignment whose `validFrom` has just passed (users `MPTEST-…-RCA` / `-RCB`, a new add case on the manual
+  resource), so `Invoke-midPointRecompute` offers `-NoReconcile` (confirmed through the cmdlet in run 16). `POST users/{oid}/recompute` does not exist on 4.10
+  (HTTP 404).
+- `DELETE shadows/{oid}` of an account that is still assigned → **HTTP 409** "Attempt to delete shadow(...) while it
+  is assigned violates an assignment policy" (run 12, test resource without `projection` settings, i.e. midPoint's
+  default assignment policy enforcement).
 - Run 3 on a manual resource: 180 s after assigning the role, the user had no linked shadow on that resource
   (neither live nor pending). Still to be analysed.
 

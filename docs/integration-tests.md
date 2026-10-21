@@ -66,11 +66,14 @@ Tested with midPoint 4.10. You need an administrator account on the test instanc
 4. Changes the assignment's validity and removes the assignment. midPoint opens a case to delete the account;
    the test completes it, checks that the account is gone and that its shadow is kept as a dead shadow.
    Before that, `Remove-midPointShadow` on the still assigned account must fail with HTTP 409 (assignment policy).
-5. Account delete: creates an account `MPTEST-<random>-SHD` without owner (`POST shadows`, add case completed),
+5. Recompute: recomputes the user with `Invoke-midPointRecompute`. Two more users `MPTEST-<random>-RCA` / `-RCB` get
+   the role with `validFrom` 20 seconds ahead (no account yet). Once that time has passed, `Invoke-midPointRecompute -NoReconcile`
+   (RCA) and `Invoke-midPointRecompute` (RCB) must each request the account (RCB: case completed, account exists).
+6. Account delete: creates an account `MPTEST-<random>-SHD` without owner (`POST shadows`, add case completed),
    deletes it with `Remove-midPointShadow` (delete case completed), checks that the shadow is dead or gone, and prints
    what a second `Remove-midPointShadow` on it answers. An aborted run can leave this account on the test resource;
    the next run completes its open cases, a live leftover can be deleted in the GUI.
-6. At the end (also after a failure) it completes any case of its account that is still open, deletes the user and
+7. At the end (also after a failure) it completes any case of its account that is still open, deletes the user and
    deletes the cases of its account.
 
 With `MIDPOINT_TEST_ORG` set, the test also assigns `midPointTools Test Org` as member and as manager, changes the

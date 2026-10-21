@@ -34,10 +34,17 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
    - `feature/user-password`: `Set-midPointUserPassword -Identity -NewPassword [-ForceChange]` in the style of
      `Set-ADAccountPassword -Reset`. Creating users without a password stays possible (`-Password` is optional).
    - OIDC / bearer token login: in a separate session, on its own branch.
-   - `feature/remove-shadow` (gap of a consumer test script, after `feature/assignment-batch`):
-     `Remove-midPointShadow` (`DELETE shadows/<oid>`; only shadow objects or OIDs; 404 = warning, 409 = error because
-     midPoint also answers 409 for an assigned account). Unit tests green; integration test prepared (account
-     `MPTEST-…-SHD` without owner, created with `POST shadows`).
+   - Gaps found by a consumer test script that still called private functions (2026-10-21), one branch and pull
+     request each, in this order; then `release/0.2.0` once all are merged and an integration run is green:
+     - `feature/recompute`: `Invoke-midPointRecompute -Identity [-NoReconcile] [-PassThru]`
+       (`PATCH users/<oid>?options=reconcile`, empty modification). Runs 13 and 16 green: with and without reconcile
+       an assignment whose `validFrom` has passed is provisioned, hence `-NoReconcile`.
+     - `feature/assignment-batch`: `-Role` / `-Org` take several targets (one PATCH); `Move-midPointOrgAssignment
+       -From -To` (one PATCH).
+     - `feature/remove-shadow`: `Remove-midPointShadow` (`DELETE shadows/<oid>`; only shadow objects or OIDs;
+       404 = warning, 409 = error because midPoint also answers 409 for an assigned account). Unit tests green;
+       integration test prepared (account `MPTEST-…-SHD` without owner, created with `POST shadows`).
+     - `feature/org-extension`: `Extension` on org objects.
 2. Open from run 3: on a manual resource the user once had no linked shadow 180 s after the assignment (not seen
    since run 6).
 
