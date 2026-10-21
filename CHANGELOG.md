@@ -20,6 +20,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), ver
   (no state without an org in between).
 - Example org `midPointTools Test Org 2` (`MIDPOINT_TEST_ORG2`) for the integration tests; the example API role may
   assign it.
+- `Extension` property on org objects (`(Get-midPointOrg 'Some Org').Extension.costCenter`), like on users.
 
 ## [0.1.0] - 2026-10-18
 

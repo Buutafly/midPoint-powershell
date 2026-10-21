@@ -37,6 +37,22 @@ Describe 'Org cmdlets' {
         Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -ParameterFilter { $Body -like '*name = \"Some Org\"*' }
     }
 
+    It 'Get-midPointOrg returns extension items with plain keys' {
+        $org = "{ `"oid`": `"$OtherOid`", `"name`": `"Some Org`", `"extension`": { `"@ns`": `"http://example.com/xml/ns/extension`", `"costCenter`": `"4711`", `"ext:sharePath`": [`"\\\\server\\share`"] } }"
+        Add-TestRoute '^POST orgs/search$' (New-TestResponse -Json (Get-TestSearchJson -Objects $org))
+        Add-TestRoute "^GET orgs/$OtherOid$" (New-TestResponse -Json "{ `"org`": $org }")
+
+        foreach ($o in (Get-midPointOrg 'Some Org'), (Get-midPointOrg -Oid $OtherOid)) {
+            $o.Extension.costCenter | Should -Be '4711'
+            $o.Extension.sharePath | Should -Be '\\server\share'
+            $o.Extension.Keys | Should -Not -Contain '@ns'
+        }
+    }
+
+    It 'Get-midPointOrg returns an empty Extension when the org has none' {
+        (Get-midPointOrg 'Some Org').Extension.Count | Should -Be 0
+    }
+
     It 'Get-midPointOrgAssignment lists only org assignments, with relation' {
         $a = @(Get-midPointOrgAssignment $UserOid)
         $a.Count | Should -Be 2

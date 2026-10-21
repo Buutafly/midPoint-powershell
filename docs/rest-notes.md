@@ -81,6 +81,9 @@ Reference: [midPoint REST API](https://docs.evolveum.com/midpoint/reference/inte
 - Several assignment changes in one modification (run 15, 2026-10-21): two `add` deltas on `assignment` (two orgs)
   and two `delete { "@id": n }` deltas each in one PATCH; `delete { "@id": n }` of one org plus `add` of another org
   in one PATCH (`Move-midPointOrgAssignment`): `parentOrgRef` afterwards only has the new org.
+- Org extension (run 19, 2026-10-21): `GET orgs/{oid}` and `POST orgs/search` both return the org's `extension` with
+  plain keys (the search result also carries an `@ns` entry), so `Get-midPointOrg` fills `Extension` from a search
+  without an extra GET.
 - Run 3 on a manual resource: 180 s after assigning the role, the user had no linked shadow on that resource
   (neither live nor pending). Still to be analysed.
 

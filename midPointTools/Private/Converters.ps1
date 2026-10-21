@@ -73,6 +73,7 @@ function ConvertTo-midPointOrgObject {
             DisplayName = ConvertFrom-midPointPolyString (Get-midPointProperty $InputObject 'displayName')
             Identifier  = Get-midPointProperty $InputObject 'identifier'
             Description = Get-midPointProperty $InputObject 'description'
+            Extension   = ConvertFrom-midPointItemContainer (Get-midPointProperty $InputObject 'extension')
             Raw         = $InputObject
         }
     }

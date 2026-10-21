@@ -58,6 +58,7 @@ Add-midPointOrgAssignment jdoe -Org 'Some Org'                    # member
 Add-midPointOrgAssignment jdoe -Org 'Some Org' -Relation manager
 Get-midPointOrgAssignment jdoe
 Move-midPointOrgAssignment jdoe -From 'Some Org' -To 'Other Org'  # one modification
+(Get-midPointOrg 'Some Org').Extension.costCenter                 # extension items by name
 
 Get-midPointShadow jdoe -Resource 'Some Resource'
 Invoke-midPointRecompute jdoe                                     # mappings and provisioning (reconcile)
