@@ -70,6 +70,9 @@ Reference: [midPoint REST API](https://docs.evolveum.com/midpoint/reference/inte
   - After the account is deleted (manual resource, case completed) the shadow stays linked with
     `"relation": "org:related"` and has `dead: true`, `exists: false`, both pending operations `completed` /
     `success`. `Get-midPointShadow` hides it, `-IncludeDead` returns it.
+- Several assignment changes in one modification (run 15, 2026-10-21): two `add` deltas on `assignment` (two orgs)
+  and two `delete { "@id": n }` deltas each in one PATCH; `delete { "@id": n }` of one org plus `add` of another org
+  in one PATCH (`Move-midPointOrgAssignment`): `parentOrgRef` afterwards only has the new org.
 - Run 3 on a manual resource: 180 s after assigning the role, the user had no linked shadow on that resource
   (neither live nor pending). Still to be analysed.
 
@@ -116,12 +119,6 @@ authorization (`AUTZ.n> Evaluating authorization ...`) with its decision.
 - With `consistency/refreshOnRead` the shadow picks up the closed case the next time it is read.
 
 ## To verify on midPoint 4.10 (TODO)
-
-Several assignment changes in one modification (`feature/assignment-batch`, from 2026-10-21):
-
-- [ ] Two `add` deltas on `assignment` (two orgs) in one PATCH, and two `delete { "@id": n }` deltas in one PATCH.
-- [ ] `delete { "@id": n }` of one org assignment plus `add` of another org in one PATCH (`Move-midPointOrgAssignment`):
-      `parentOrgRef` afterwards only has the new org. The integration test prints it.
 
 Run `Tests/Integration` with `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` set for the remaining items
 (`MIDPOINT_TEST_EXTENSION_ITEM` for the extension item). The integration test prints the raw JSON of each item.
