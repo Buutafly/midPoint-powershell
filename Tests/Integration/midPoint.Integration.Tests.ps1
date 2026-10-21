@@ -481,13 +481,11 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
             }
         }
 
-        It 'empty modification without reconcile (printed: does it create the account?)' {
+        It 'requests the account with Invoke-midPointRecompute -NoReconcile' {
             $sleep = [int][Math]::Ceiling(($rcValidFrom - (Get-Date)).TotalSeconds) + 2
             if ($sleep -gt 0) { Start-Sleep -Seconds $sleep }
-            $r = & (Get-Module midPointTools) { param($o) Invoke-midPointRestMethod -Method PATCH -Path "users/$o" -Body ([ordered]@{ objectModification = [ordered]@{} }) } $rcUsers[0].Oid
-            $created = Test-RcAccount -Account $rcNames[0] -User $rcUsers[0]
-            Write-Host "Without reconcile ($($rcNames[0])): HTTP $($r.StatusCode), account requested: $created"
-            [int]$r.StatusCode | Should -BeLessThan 300
+            Invoke-midPointRecompute $rcUsers[0] -NoReconcile
+            Test-RcAccount -Account $rcNames[0] -User $rcUsers[0] -TimeoutSeconds 30 | Should -BeTrue -Because 'a recompute without reconcile also evaluates the assignment that is now valid (run 13)'
         }
 
         It 'creates the account with Invoke-midPointRecompute (reconcile)' {

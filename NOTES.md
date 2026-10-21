@@ -36,10 +36,9 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
    - OIDC / bearer token login: in a separate session, on its own branch.
    - Gaps found by a consumer test script that still called private functions (2026-10-21), one branch and pull
      request each, in this order; then `release/0.2.0` once all are merged and an integration run is green:
-     - `feature/recompute`: `Invoke-midPointRecompute -Identity [-PassThru]` (`PATCH users/<oid>?options=reconcile`,
-       empty modification). Unit tests green; run 12: both variants HTTP 204, but an assigned account cannot be
-       deleted (HTTP 409, assignment policy), so the test now uses an assignment whose `validFrom` passes
-       (users `MPTEST-…-RCA` / `-RCB`); the next run decides on a `-NoReconcile` switch.
+     - `feature/recompute`: `Invoke-midPointRecompute -Identity [-NoReconcile] [-PassThru]`
+       (`PATCH users/<oid>?options=reconcile`, empty modification). Run 13 green: with and without reconcile an
+       assignment whose `validFrom` has passed is provisioned, hence `-NoReconcile`; its own check is in the next run.
      - `feature/assignment-batch`: `-Role` / `-Org` take several targets (one PATCH); `Move-midPointOrgAssignment
        -From -To` (one PATCH).
      - `feature/remove-shadow`: `Remove-midPointShadow` (`DELETE shadows/<oid>`, 404 / 409 as warnings).

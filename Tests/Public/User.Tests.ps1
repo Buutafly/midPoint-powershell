@@ -158,6 +158,16 @@ Describe 'User cmdlets' {
             }
         }
 
+        It 'sends the empty modification without options with -NoReconcile' {
+            Add-TestRoute "^PATCH users/$UserOid$" (New-TestResponse -StatusCode 204)
+
+            Invoke-midPointRecompute $UserOid -NoReconcile
+
+            Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 1 -Exactly -ParameterFilter {
+                $Method -eq 'PATCH' -and $Uri -notmatch '\?' -and $Body -eq '{"objectModification":{}}'
+            }
+        }
+
         It 'recomputes piped users by name and returns them with -PassThru' {
             Add-TestRoute '^POST users/search$' (New-TestResponse -Json $searchJack)
             Add-TestRoute "^PATCH users/$UserOid\?options=reconcile$" (New-TestResponse -StatusCode 204)

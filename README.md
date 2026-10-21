@@ -59,6 +59,7 @@ Get-midPointOrgAssignment jdoe
 
 Get-midPointShadow jdoe -Resource 'Some Resource'
 Invoke-midPointRecompute jdoe                                     # mappings and provisioning (reconcile)
+Invoke-midPointRecompute jdoe -NoReconcile                        # without reading the resources
 Remove-midPointUser jdoe
 ```
 
