@@ -13,6 +13,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), ver
 - `Invoke-midPointRecompute`: recomputes a user with reconciliation (`PATCH users/<oid>?options=reconcile` with an
   empty modification), like the recompute task: mappings and provisioning run, provisioning errors are reported.
   `-NoReconcile` skips the reconciliation (the resources are not read).
+- `Add-` / `Remove-midPointRoleAssignment -Role` and `Add-` / `Remove-midPointOrgAssignment -Org` take several
+  targets; all assignment changes go into one modification (one PATCH), so midPoint provisions once. Piped assignment
+  objects still give one PATCH each.
+- `Move-midPointOrgAssignment -From -To [-Relation]`: moves a user from one org to another in one modification
+  (no state without an org in between).
+- Example org `midPointTools Test Org 2` (`MIDPOINT_TEST_ORG2`) for the integration tests; the example API role may
+  assign it.
 
 ## [0.1.0] - 2026-10-18
 
