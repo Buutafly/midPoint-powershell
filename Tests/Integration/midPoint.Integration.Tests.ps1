@@ -17,7 +17,7 @@
 #
 # Run: Invoke-Pester ./Tests/Integration -Tag Integration -Output Detailed
 # Creates one user named MPTEST-<random> and deletes it at the end (plus MPTEST-<random>-PW / -EXT for the password
-# and extension tests, deleted right away, and MPTEST-<random>-RC with the test role for the recompute test).
+# and extension tests, deleted right away, and MPTEST-<random>-RCA / -RCB with the test role for the recompute test).
 # The role and the resource are never changed, only read: the test assigns the role to its own user (validTo in
 # 30 days), waits for the account on the resource (needs an inducement with a construction for that resource in the
 # role), clears the assignment's validTo, removes the assignment and waits until the account is deleted or disabled.
@@ -88,11 +88,13 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
         function Wait-TestCase {
             # Waits for an open case of the test account (midPoint opens it while processing the change).
             param([int] $TimeoutSeconds = $script:wait, [string] $Account = $script:name)
+            # Checks at least once (-TimeoutSeconds 0 only looks).
             $deadline = [datetime]::UtcNow.AddSeconds($TimeoutSeconds)
-            while ([datetime]::UtcNow -lt $deadline) {
+            do {
                 if (@(Get-TestCase -Account $Account -State Open).Count -gt 0) { return $true }
+                if ([datetime]::UtcNow -ge $deadline) { break }
                 Start-Sleep -Seconds 2
-            }
+            } while ($true)
             $false
         }
 
@@ -435,81 +437,68 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
         }
     }
 
-    Context 'Recompute recreates a deleted account' -Skip:(-not $hasResource) {
+    Context 'Recompute applies an assignment that became valid' -Skip:(-not $hasResource) {
+        # An account cannot be deleted while it is assigned (run 12: HTTP 409 "... while it is assigned violates an
+        # assignment policy"). Instead: the role is assigned with validFrom a few seconds ahead; when that time has
+        # passed, only a recompute (or midPoint's validity scanner task) creates the account.
         BeforeAll {
-            $script:rcName = "$name-RC"
-
-            function Get-RcAccount {
-                # The live accounts of the recompute user (pending ones too on a manual resource).
-                @(Get-midPointShadow $rcUser -Resource $env:MIDPOINT_TEST_RESOURCE -NoFetch:$manual)
+            $script:rcNames = @("$name-RCA", "$name-RCB")
+            $script:rcValidFrom = (Get-Date).AddSeconds(20)
+            $script:rcUsers = foreach ($n in $rcNames) {
+                $u = New-midPointUser -Name $n -GivenName 'Test' -FamilyName 'Recompute' -EmailAddress "$n@example.com" -PassThru
+                Add-midPointRoleAssignment $u -Role $env:MIDPOINT_TEST_ROLE -ValidFrom $rcValidFrom
+                $u
             }
 
-            function Wait-RcAccount {
-                # Completes the add case on a manual resource, then waits for the account to exist.
-                if ($manual) {
-                    Wait-TestCase -Account $rcName | Should -BeTrue -Because 'midPoint opens a case to create the account'
-                    $null = Complete-TestCase -Account $rcName -Comment 'midPointTools integration test'
-                }
-                Wait-midPointShadow $rcUser -Resource $env:MIDPOINT_TEST_RESOURCE -TimeoutSeconds $wait
+            function Test-RcAccount {
+                # True when midPoint has started to create the account: an open case (manual resource) or a shadow.
+                param([string] $Account, [object] $User, [int] $TimeoutSeconds = 15)
+                if ($manual) { return (Wait-TestCase -Account $Account -TimeoutSeconds $TimeoutSeconds) }
+                @(Get-midPointShadow $User -Resource $env:MIDPOINT_TEST_RESOURCE -NoFetch).Count -gt 0
             }
-
-            function Remove-RcAccount {
-                # Deletes the account like "delete projection" in the GUI; the role stays assigned.
-                $s = @(Get-midPointShadow $rcUser -Resource $env:MIDPOINT_TEST_RESOURCE -NoFetch)
-                $s.Count | Should -Be 1 -Because 'the recompute user has one account'
-                $r = & (Get-Module midPointTools) { param($o) Invoke-midPointRestMethod -Method DELETE -Path "shadows/$o" } $s[0].Oid
-                Write-Host "DELETE shadows/<oid>: HTTP $($r.StatusCode)"
-                if ($manual) {
-                    Wait-TestCase -Account $rcName | Should -BeTrue -Because 'deleting the account opens a case'
-                    $null = Complete-TestCase -Account $rcName -Comment 'midPointTools integration test'
-                }
-                $deadline = [datetime]::UtcNow.AddSeconds($wait)
-                while (@(Get-midPointShadow $rcUser -Resource $env:MIDPOINT_TEST_RESOURCE).Count -gt 0 -and [datetime]::UtcNow -lt $deadline) { Start-Sleep -Seconds 2 }
-                @(Get-midPointShadow $rcUser -Resource $env:MIDPOINT_TEST_RESOURCE) | Should -BeNullOrEmpty -Because 'the account is deleted'
-            }
-
-            $script:rcUser = New-midPointUser -Name $rcName -GivenName 'Test' -FamilyName 'Recompute' -EmailAddress "$rcName@example.com" -PassThru
-            Add-midPointRoleAssignment $rcUser -Role $env:MIDPOINT_TEST_ROLE
         }
 
         AfterAll {
-            if ($script:rcUser) {
+            for ($i = 0; $i -lt @($script:rcUsers).Count; $i++) {
                 try {
-                    if ($manual) { $null = Complete-TestCase -Account $rcName -Comment 'midPointTools integration test cleanup' }
-                    $rcUser | Remove-midPointUser -Confirm:$false
+                    if ($manual) { $null = Complete-TestCase -Account $rcNames[$i] -Comment 'midPointTools integration test cleanup' }
+                    $rcUsers[$i] | Remove-midPointUser -Confirm:$false
                     if ($manual) {
-                        $null = Complete-TestCase -Account $rcName -Comment 'midPointTools integration test cleanup'
-                        $null = Remove-TestCase -Account $rcName
+                        $null = Complete-TestCase -Account $rcNames[$i] -Comment 'midPointTools integration test cleanup'
+                        $null = Remove-TestCase -Account $rcNames[$i]
                     }
                 }
-                catch { Write-Warning "Cleanup of $rcName failed: $_" }
+                catch { Write-Warning "Cleanup of $($rcNames[$i]) failed: $_" }
             }
         }
 
-        It 'has the account of the role' {
-            (Wait-RcAccount).Exists | Should -BeTrue
-        }
-
-        It 'deletes the account while the role stays assigned' {
-            Remove-RcAccount
-            Get-midPointRoleAssignment $rcUser -Role $env:MIDPOINT_TEST_ROLE | Should -Not -BeNullOrEmpty
-        }
-
-        It 'empty modification without reconcile (printed: does it recreate the account?)' {
-            $r = & (Get-Module midPointTools) { param($o) Invoke-midPointRestMethod -Method PATCH -Path "users/$o" -Body ([ordered]@{ objectModification = [ordered]@{} }) } $rcUser.Oid
-            $recreated = if ($manual) { Wait-TestCase -Account $rcName -TimeoutSeconds 15 } else { @(Get-RcAccount).Count -gt 0 }
-            Write-Host "Without reconcile: HTTP $($r.StatusCode), account recreated: $recreated"
-            if ($recreated) {
-                # Start the reconcile test from a deleted account again.
-                $null = Wait-RcAccount
-                Remove-RcAccount
+        It 'has no account while the assignment is not yet valid' {
+            for ($i = 0; $i -lt $rcUsers.Count; $i++) {
+                $s = @(Get-midPointShadow $rcUsers[$i] -Resource $env:MIDPOINT_TEST_RESOURCE -NoFetch)
+                $c = @(if ($manual) { Get-TestCase -Account $rcNames[$i] })
+                Write-Host "$($rcNames[$i]) before validFrom: $($s.Count) shadow(s), $($c.Count) case(s)"
+                $s.Count + $c.Count | Should -Be 0 -Because 'an assignment that is not yet valid gives no account'
             }
         }
 
-        It 'recreates the account with Invoke-midPointRecompute (reconcile)' {
-            Invoke-midPointRecompute $rcUser
-            if ($manual) { Write-Host "Open case after the recompute: $((Get-TestCase -Account $rcName -State Open).Name -join '; ')" }
-            $s = Wait-RcAccount
+        It 'empty modification without reconcile (printed: does it create the account?)' {
+            $sleep = [int][Math]::Ceiling(($rcValidFrom - (Get-Date)).TotalSeconds) + 2
+            if ($sleep -gt 0) { Start-Sleep -Seconds $sleep }
+            $r = & (Get-Module midPointTools) { param($o) Invoke-midPointRestMethod -Method PATCH -Path "users/$o" -Body ([ordered]@{ objectModification = [ordered]@{} }) } $rcUsers[0].Oid
+            $created = Test-RcAccount -Account $rcNames[0] -User $rcUsers[0]
+            Write-Host "Without reconcile ($($rcNames[0])): HTTP $($r.StatusCode), account requested: $created"
+            [int]$r.StatusCode | Should -BeLessThan 300
+        }
+
+        It 'creates the account with Invoke-midPointRecompute (reconcile)' {
+            if (Test-RcAccount -Account $rcNames[1] -User $rcUsers[1] -TimeoutSeconds 0) {
+                Set-ItResult -Inconclusive -Because "the account of $($rcNames[1]) was requested before the recompute (validity scanner task?)"
+                return
+            }
+            Invoke-midPointRecompute $rcUsers[1]
+            Test-RcAccount -Account $rcNames[1] -User $rcUsers[1] -TimeoutSeconds 30 | Should -BeTrue -Because 'the recompute evaluates the assignment that is now valid'
+            if ($manual) { $null = Complete-TestCase -Account $rcNames[1] -Comment 'midPointTools integration test' }
+            $s = Wait-midPointShadow $rcUsers[1] -Resource $env:MIDPOINT_TEST_RESOURCE -TimeoutSeconds $wait
             Write-Host "Account after the recompute: $($s.Name) exists=$($s.Exists)"
             $s.Exists | Should -BeTrue
         }

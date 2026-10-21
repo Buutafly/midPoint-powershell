@@ -119,14 +119,17 @@ authorization (`AUTZ.n> Evaluating authorization ...`) with its decision.
 
 Recompute (`Invoke-midPointRecompute`, from 2026-10-21):
 
-- [ ] `PATCH users/{oid}?options=reconcile` with `{ "objectModification": {} }` recreates an account that was deleted
-      while the role stays assigned (manual resource: a new add case). Seen on a 4.10.4 instance outside the
-      integration test; `POST users/{oid}/recompute` does not exist on 4.10 (HTTP 404).
-- [ ] The same empty modification **without** `options=reconcile`: accepted (status code?) and does it recreate the
-      account? The integration test prints both. Decides whether `Invoke-midPointRecompute` gets a `-NoReconcile`
-      switch; until then reconcile is the only mode.
-- [ ] `DELETE shadows/{oid}` of a linked account (role still assigned) deletes it on the resource; on the manual
-      resource it opens a delete case (used by the recompute test, later by `Remove-midPointShadow`).
+- [x] `PATCH users/{oid}?options=reconcile` with `{ "objectModification": {} }` → HTTP 204 (run 12). An empty
+      modification **without** options is accepted too (HTTP 204, run 12). `POST users/{oid}/recompute` does not
+      exist on 4.10 (HTTP 404).
+- [x] `DELETE shadows/{oid}` of an account that is still assigned → **HTTP 409** "Attempt to delete shadow(...) while
+      it is assigned violates an assignment policy" (run 12, test resource without `projection` settings, i.e. the
+      default assignment policy enforcement). So the integration test cannot delete an assigned account to check the
+      recompute.
+- [ ] Recompute with reconcile requests the account of an assignment whose `validFrom` has just passed (user
+      `MPTEST-…-RCB`, manual resource: a new add case).
+- [ ] The same without reconcile (user `MPTEST-…-RCA`): does it request the account too? The test prints it. Decides
+      whether `Invoke-midPointRecompute` gets a `-NoReconcile` switch; until then reconcile is the only mode.
 
 Run `Tests/Integration` with `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` set for the remaining items
 (`MIDPOINT_TEST_EXTENSION_ITEM` for the extension item). The integration test prints the raw JSON of each item.
