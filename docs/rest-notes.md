@@ -81,6 +81,12 @@ Reference: [midPoint REST API](https://docs.evolveum.com/midpoint/reference/inte
 - Several assignment changes in one modification (run 15, 2026-10-21): two `add` deltas on `assignment` (two orgs)
   and two `delete { "@id": n }` deltas each in one PATCH; `delete { "@id": n }` of one org plus `add` of another org
   in one PATCH (`Move-midPointOrgAssignment`): `parentOrgRef` afterwards only has the new org.
+- Account delete (run 18, 2026-10-21, `Remove-midPointShadow`): `POST shadows` with `{ "shadow": { resourceRef,
+  objectClass "ri:AccountObjectClass", kind, intent, attributes { "@ns": ".../resource/instance-3", username, mail } } }`
+  → HTTP 201, OID in `Location`; on the manual resource an add case. `DELETE shadows/{oid}` of that account (no owner)
+  opens a delete case; once completed the shadow is `dead: true`, `exists: false`. A second `DELETE` of the **dead**
+  shadow answers without error but opens **another** case, so `Remove-midPointShadow` skips dead shadows with a
+  warning. `DELETE` of an assigned account → HTTP 409 (assignment policy), as in run 12.
 - Run 3 on a manual resource: 180 s after assigning the role, the user had no linked shadow on that resource
   (neither live nor pending). Still to be analysed.
 

@@ -41,7 +41,9 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
        an assignment whose `validFrom` has passed is provisioned, hence `-NoReconcile`.
      - `feature/assignment-batch`: `-Role` / `-Org` take several targets (one PATCH); `Move-midPointOrgAssignment
        -From -To [-Relation]` (one PATCH). Integration run 15 green (`060-org-test-2.xml`, `MIDPOINT_TEST_ORG2`).
-     - `feature/remove-shadow`: `Remove-midPointShadow` (`DELETE shadows/<oid>`, 404 / 409 as warnings).
+     - `feature/remove-shadow`: `Remove-midPointShadow` (`DELETE shadows/<oid>`; only shadow objects or OIDs;
+       404 or dead shadow = warning, 409 = error because midPoint also answers 409 for an assigned account).
+       Run 18 green; a DELETE of a dead shadow opened another case, so dead shadows are now skipped (next run checks).
      - `feature/org-extension`: `Extension` on org objects.
 2. Open from run 3: on a manual resource the user once had no linked shadow 180 s after the assignment (not seen
    since run 6).
