@@ -154,4 +154,76 @@ Describe 'Shadow cmdlets' {
             (Wait-midPointShadow $UserOid -Resource $ResourceOid -Attribute @{ telephoneNumber = $null }).Oid | Should -Be $ShadowOid
         }
     }
+
+    Context 'Remove-midPointShadow' {
+        It 'reads the shadow with noFetch and deletes it' {
+            Add-TestRoute "^DELETE shadows/$ShadowOid$" (New-TestResponse -StatusCode 204)
+
+            Remove-midPointShadow $ShadowOid -Confirm:$false
+
+            Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 1 -Exactly -ParameterFilter {
+                $Method -eq 'GET' -and $Uri -like "*shadows/${ShadowOid}?options=noFetch&options=resolveNames"
+            }
+            Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 1 -Exactly -ParameterFilter {
+                $Method -eq 'DELETE' -and $Uri -like "*/shadows/$ShadowOid"
+            }
+        }
+
+        It 'deletes the shadows piped from Get-midPointShadow' {
+            Add-TestRoute '^DELETE shadows/' (New-TestResponse -StatusCode 204)
+
+            Get-midPointShadow $UserOid -NoFetch | Remove-midPointShadow -Confirm:$false
+
+            Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 1 -Exactly -ParameterFilter { $Method -eq 'DELETE' -and $Uri -like "*/shadows/$ShadowOid" }
+            Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 1 -Exactly -ParameterFilter { $Method -eq 'DELETE' -and $Uri -like "*/shadows/$OtherOid" }
+        }
+
+        It 'refuses a user object piped by mistake and sends nothing' {
+            $user = & (Get-Module midPointTools) { param($j) $j | ConvertFrom-Json | ForEach-Object user | ConvertTo-midPointUserObject } (Get-TestUserJson)
+
+            { $user | Remove-midPointShadow -Confirm:$false } | Should -Throw '*midPointTools.User object is not a shadow*'
+            Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 0 -Exactly
+        }
+
+        It 'refuses a name' {
+            { Remove-midPointShadow 'jack' -Confirm:$false } | Should -Throw "*'jack' is not an OID*"
+            Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 0 -Exactly
+        }
+
+        It 'refuses an OID that is not a shadow' {
+            Add-TestRoute "^GET shadows/$UserOid\?" (New-TestResponse -Json (Get-TestUserJson))
+            { Remove-midPointShadow $UserOid -Confirm:$false } | Should -Throw '*not a shadow*'
+            Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 0 -Exactly -ParameterFilter { $Method -eq 'DELETE' }
+        }
+
+        It 'warns when the shadow no longer exists (404 on GET)' {
+            Add-TestRoute "^GET shadows/$ShadowOid\?" (New-TestResponse -StatusCode 404 -Json '{ "message": "Object not found" }')
+
+            Remove-midPointShadow $ShadowOid -Confirm:$false -WarningVariable w -WarningAction SilentlyContinue
+
+            "$w" | Should -BeLike '*no longer exists*'
+            Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 0 -Exactly -ParameterFilter { $Method -eq 'DELETE' }
+        }
+
+        It 'warns when the shadow is gone by the time of the delete (404 on DELETE)' {
+            Add-TestRoute "^DELETE shadows/$ShadowOid$" (New-TestResponse -StatusCode 404 -Json '{ "message": "Object not found" }')
+            Remove-midPointShadow $ShadowOid -Confirm:$false -WarningVariable w -WarningAction SilentlyContinue
+            "$w" | Should -BeLike '*no longer exists*'
+        }
+
+        It 'stops with the status code when midPoint refuses the delete (409, assignment policy)' {
+            Add-TestRoute "^DELETE shadows/$ShadowOid$" (New-TestResponse -StatusCode 409 -Json '{ "message": "Attempt to delete shadow while it is assigned violates an assignment policy" }')
+
+            $err = $null
+            try { Remove-midPointShadow $ShadowOid -Confirm:$false } catch { $err = $_ }
+
+            $err.Exception.Data['StatusCode'] | Should -Be 409
+            $err.Exception.Message | Should -BeLike '*assignment policy*'
+        }
+
+        It 'sends nothing with -WhatIf and names the account and resource' {
+            Remove-midPointShadow $ShadowOid -WhatIf
+            Should -Invoke Invoke-midPointHttp -ModuleName midPointTools -Times 0 -Exactly -ParameterFilter { $Method -eq 'DELETE' }
+        }
+    }
 }

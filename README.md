@@ -58,6 +58,7 @@ Add-midPointOrgAssignment jdoe -Org 'Some Org' -Relation manager
 Get-midPointOrgAssignment jdoe
 
 Get-midPointShadow jdoe -Resource 'Some Resource'
+Get-midPointShadow jdoe -Resource 'Some Resource' -NoFetch | Remove-midPointShadow  # deletes the account
 Remove-midPointUser jdoe
 ```
 
@@ -104,7 +105,7 @@ Get-midPointCase -Resource 'Manual Resource' -Account jdoe -State Open | Complet
 | Roles | `Get-midPointRole`, `Get-midPointRoleAssignment`, `Add-midPointRoleAssignment`, `Set-midPointRoleAssignment`, `Remove-midPointRoleAssignment` |
 | Orgs | `Get-midPointOrg`, `Get-midPointOrgAssignment`, `Add-midPointOrgAssignment`, `Set-midPointOrgAssignment`, `Remove-midPointOrgAssignment` |
 | Resources | `Get-midPointResource` |
-| Accounts | `Get-midPointShadow`, `Test-midPointShadow`, `Wait-midPointShadow` |
+| Accounts | `Get-midPointShadow`, `Test-midPointShadow`, `Wait-midPointShadow`, `Remove-midPointShadow` |
 | Cases | `Get-midPointCase`, `Complete-midPointCase`, `Remove-midPointCase` |
 
 ### Status and validity

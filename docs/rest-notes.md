@@ -117,6 +117,16 @@ authorization (`AUTZ.n> Evaluating authorization ...`) with its decision.
 
 ## To verify on midPoint 4.10 (TODO)
 
+Account delete (`Remove-midPointShadow`, from 2026-10-21):
+
+- [ ] `POST shadows` with `{ "shadow": { resourceRef, objectClass "ri:AccountObjectClass", kind, intent, attributes
+      { "@ns": ".../resource/instance-3", username, mail } } }` creates an account without owner (manual resource:
+      an add case); the OID is in the `Location` header.
+- [ ] `DELETE shadows/{oid}` of that account opens a delete case on the manual resource; after completing it the
+      shadow is dead (or gone).
+- [ ] What a second `DELETE shadows/{oid}` of the dead shadow answers (204, 404 or 409) – the test prints it.
+- [ ] `Remove-midPointShadow` on an assigned account stops with HTTP 409 (seen with a raw DELETE in run 12).
+
 Run `Tests/Integration` with `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` set for the remaining items
 (`MIDPOINT_TEST_EXTENSION_ITEM` for the extension item). The integration test prints the raw JSON of each item.
 

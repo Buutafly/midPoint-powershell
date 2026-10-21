@@ -34,6 +34,10 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
    - `feature/user-password`: `Set-midPointUserPassword -Identity -NewPassword [-ForceChange]` in the style of
      `Set-ADAccountPassword -Reset`. Creating users without a password stays possible (`-Password` is optional).
    - OIDC / bearer token login: in a separate session, on its own branch.
+   - `feature/remove-shadow` (gap of a consumer test script, after `feature/assignment-batch`):
+     `Remove-midPointShadow` (`DELETE shadows/<oid>`; only shadow objects or OIDs; 404 = warning, 409 = error because
+     midPoint also answers 409 for an assigned account). Unit tests green; integration test prepared (account
+     `MPTEST-…-SHD` without owner, created with `POST shadows`).
 2. Open from run 3: on a manual resource the user once had no linked shadow 180 s after the assignment (not seen
    since run 6).
 

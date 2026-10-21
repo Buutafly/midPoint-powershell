@@ -17,7 +17,7 @@
 #
 # Run: Invoke-Pester ./Tests/Integration -Tag Integration -Output Detailed
 # Creates one user named MPTEST-<random> and deletes it at the end (plus MPTEST-<random>-PW / -EXT for the password
-# and extension tests, deleted right away).
+# and extension tests, deleted right away) and an account MPTEST-<random>-SHD without owner for Remove-midPointShadow.
 # The role and the resource are never changed, only read: the test assigns the role to its own user (validTo in
 # 30 days), waits for the account on the resource (needs an inducement with a construction for that resource in the
 # role), clears the assignment's validTo, removes the assignment and waits until the account is deleted or disabled.
@@ -368,6 +368,17 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
             }
         }
 
+        It 'Remove-midPointShadow refuses an account that is still assigned (HTTP 409)' -Skip:(-not $hasResource) {
+            $s = @(Get-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE -NoFetch)
+            $s.Count | Should -Be 1
+            $err = $null
+            try { $s | Remove-midPointShadow -Confirm:$false } catch { $err = $_ }
+            Write-Host "Remove-midPointShadow on the assigned account: $(if ($err) { "HTTP $($err.Exception.Data['StatusCode']): $($err.Exception.Message)" } else { 'no error' })"
+            $err | Should -Not -BeNullOrEmpty -Because 'the test resource enforces assignments (run 12)'
+            $err.Exception.Data['StatusCode'] | Should -Be 409
+            (Get-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE).Exists | Should -BeTrue -Because 'the account stays'
+        }
+
         It 'changes the assignment validity' {
             $a = Set-midPointRoleAssignment $user -Role $env:MIDPOINT_TEST_ROLE -ClearValidTo -PassThru
             $a.ValidTo | Should -BeNullOrEmpty
@@ -418,6 +429,80 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
             }
             @($all | Where-Object Dead).Count | Should -BeGreaterThan 0 -Because 'the deleted account is kept as a dead shadow'
             @(Get-midPointShadow $user -Resource $env:MIDPOINT_TEST_RESOURCE -NoFetch) | Should -BeNullOrEmpty -Because 'without -IncludeDead dead shadows are skipped'
+        }
+    }
+
+    Context 'Account delete (Remove-midPointShadow)' -Skip:(-not $hasResource) {
+        # An assigned account cannot be deleted (HTTP 409), so the test creates an account without owner.
+        BeforeAll {
+            $script:shdName = "$name-SHD"
+            $script:shdOid = $null
+
+            function Get-ShdShadow {
+                # The raw shadow (read with fetch, so a manual resource records closed cases), or $null when gone.
+                try { & (Get-Module midPointTools) { param($o) Get-midPointObjectByOid -Type shadows -Oid $o } $shdOid }
+                catch { if ($_.Exception.Data['StatusCode'] -eq 404) { return $null }; throw }
+            }
+        }
+
+        AfterAll {
+            if ($manual) {
+                try {
+                    $null = Complete-TestCase -Account $shdName -Comment 'midPointTools integration test cleanup'
+                    if ($shdOid -and (Get-ShdShadow) -and -not (Get-ModuleProperty (Get-ShdShadow) 'dead')) {
+                        Remove-midPointShadow $shdOid -Confirm:$false -WarningAction SilentlyContinue
+                        $null = Complete-TestCase -Account $shdName -Comment 'midPointTools integration test cleanup'
+                    }
+                    $null = Remove-TestCase -Account $shdName
+                }
+                catch { Write-Warning "Cleanup of the account $shdName failed: $_" }
+            }
+        }
+
+        It 'creates an account without owner (POST shadows)' {
+            $resourceOid = (Get-midPointResource $env:MIDPOINT_TEST_RESOURCE).Oid
+            $body = [ordered]@{
+                shadow = [ordered]@{
+                    resourceRef = [ordered]@{ oid = $resourceOid; type = 'c:ResourceType' }
+                    objectClass = 'ri:AccountObjectClass'
+                    kind        = 'account'
+                    intent      = 'default'
+                    attributes  = [ordered]@{ '@ns' = 'http://midpoint.evolveum.com/xml/ns/public/resource/instance-3'; username = $shdName; mail = "$shdName@example.com" }
+                }
+            }
+            $r = & (Get-Module midPointTools) { param($b) Invoke-midPointRestMethod -Method POST -Path 'shadows' -Body $b } $body
+            $location = [string]($r.Headers.Location | Select-Object -First 1)
+            $script:shdOid = ($location.TrimEnd('/') -split '/')[-1]
+            Write-Host "POST shadows: HTTP $($r.StatusCode), OID $shdOid"
+            $shdOid | Should -Match '^[0-9a-f-]{36}$'
+            if ($manual) {
+                Wait-TestCase -Account $shdName -TimeoutSeconds 30 | Should -BeTrue -Because 'midPoint opens a case to create the account'
+                $null = Complete-TestCase -Account $shdName -Comment 'midPointTools integration test'
+            }
+            $raw = Get-ShdShadow
+            Write-Host "Shadow after create: exists=$(Get-ModuleProperty $raw 'exists'), dead=$(Get-ModuleProperty $raw 'dead')"
+            Get-ModuleProperty $raw 'dead' | Should -Not -BeTrue
+        }
+
+        It 'deletes the account with Remove-midPointShadow' {
+            if (-not $shdOid) { Set-ItResult -Skipped -Because 'the account was not created'; return }
+            Remove-midPointShadow $shdOid -Confirm:$false
+            if ($manual) {
+                Wait-TestCase -Account $shdName -TimeoutSeconds 30 | Should -BeTrue -Because 'deleting the account opens a case'
+                $null = Complete-TestCase -Account $shdName -Comment 'midPointTools integration test'
+            }
+            $raw = Get-ShdShadow
+            Write-Host "Shadow after delete: $(if ($raw) { "dead=$(Get-ModuleProperty $raw 'dead'), exists=$(Get-ModuleProperty $raw 'exists')" } else { 'gone (404)' })"
+            ($null -eq $raw -or (Get-ModuleProperty $raw 'dead')) | Should -BeTrue -Because 'the account is deleted'
+        }
+
+        It 'Remove-midPointShadow on the deleted account (printed)' {
+            if (-not $shdOid) { Set-ItResult -Skipped -Because 'the account was not created'; return }
+            $err = $null
+            try { Remove-midPointShadow $shdOid -Confirm:$false -WarningVariable w -WarningAction SilentlyContinue } catch { $err = $_ }
+            $result = if ($err) { "error HTTP $($err.Exception.Data['StatusCode']): $($err.Exception.Message)" } elseif ($w) { "warning: $w" } else { 'no error (dead shadow deleted)' }
+            Write-Host "Second Remove-midPointShadow: $result"
+            if ($manual) { Write-Host "Open cases after it: $(@(Get-TestCase -Account $shdName -State Open).Count)" }
         }
     }
 }

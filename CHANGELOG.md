@@ -10,6 +10,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), ver
   another relation, with assignment status and validity).
 - Example org `midPointTools Test Org` for the integration tests; the example API role may assign it.
 - `Extension` property on user objects: the user's extension items by name (`$u.Extension.costCenter`).
+- `Remove-midPointShadow`: deletes an account on its resource (`DELETE shadows/<oid>`, like "delete projection"),
+  from Get-midPointShadow objects or shadow OIDs; other objects are refused. A shadow that is already gone (404) is a
+  warning; an account that is still assigned (409, assignment policy) is an error.
 
 ## [0.1.0] - 2026-10-18
 
