@@ -73,11 +73,14 @@ Reference: [midPoint REST API](https://docs.evolveum.com/midpoint/reference/inte
 - Recompute (runs 12 and 13, 2026-10-21): `PATCH users/{oid}?options=reconcile` with `{ "objectModification": {} }`
   → HTTP 204; an empty modification **without** options is accepted too (HTTP 204). Both request the account of an
   assignment whose `validFrom` has just passed (users `MPTEST-…-RCA` / `-RCB`, a new add case on the manual
-  resource), so `Invoke-midPointRecompute` offers `-NoReconcile` (confirmed through the cmdlet in run 16). `POST users/{oid}/recompute` does not exist on 4.10
-  (HTTP 404).
+  resource), so `Invoke-midPointRecompute` offers `-NoReconcile` (confirmed through the cmdlet in run 16).
+  `POST users/{oid}/recompute` does not exist on 4.10 (HTTP 404).
 - `DELETE shadows/{oid}` of an account that is still assigned → **HTTP 409** "Attempt to delete shadow(...) while it
   is assigned violates an assignment policy" (run 12, test resource without `projection` settings, i.e. midPoint's
   default assignment policy enforcement).
+- Several assignment changes in one modification (run 15, 2026-10-21): two `add` deltas on `assignment` (two orgs)
+  and two `delete { "@id": n }` deltas each in one PATCH; `delete { "@id": n }` of one org plus `add` of another org
+  in one PATCH (`Move-midPointOrgAssignment`): `parentOrgRef` afterwards only has the new org.
 - Org extension (run 19, 2026-10-21): `GET orgs/{oid}` and `POST orgs/search` both return the org's `extension` with
   plain keys (the search result also carries an `@ns` entry), so `Get-midPointOrg` fills `Extension` from a search
   without an extra GET.

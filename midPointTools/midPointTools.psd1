@@ -33,6 +33,7 @@
         'Add-midPointOrgAssignment'
         'Set-midPointOrgAssignment'
         'Remove-midPointOrgAssignment'
+        'Move-midPointOrgAssignment'
         'Get-midPointResource'
         'Get-midPointShadow'
         'Test-midPointShadow'

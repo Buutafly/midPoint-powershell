@@ -5,7 +5,7 @@ This page shows how to prepare a midPoint **test instance** so that the tests to
 
 ## What gets imported
 
-Five example objects in [`Tests/Integration/midpoint/`](../Tests/Integration/midpoint/), all named
+Six example objects in [`Tests/Integration/midpoint/`](../Tests/Integration/midpoint/), all named
 `midPointTools …` so they are easy to find and to delete again:
 
 | File | Object | Purpose |
@@ -15,6 +15,7 @@ Five example objects in [`Tests/Integration/midpoint/`](../Tests/Integration/mid
 | `030-role-api.xml` | Role `midPointTools API (test)` | The rights of the API user, limited to the test objects (see below). |
 | `040-user-api.xml` | User `midpointtools-api` | The user the tests log in as. No password in the file. |
 | `050-org-test.xml` | Org `midPointTools Test Org` | The org the tests assign (as member and as manager). Induces nothing. |
+| `060-org-test-2.xml` | Org `midPointTools Test Org 2` | A second org: two orgs in one modification, moving the user between orgs. Induces nothing. |
 
 The objects reference each other by OID. The OIDs in the files are made up (`6d707400-0000-4000-8000-00000000000n`);
 keep them as they are.
@@ -26,7 +27,7 @@ keep them as they are.
 - use the REST API and read itself (`Connect-midPoint` calls `GET /self`),
 - read, create, change and delete users whose name starts with `MPTEST-`,
 - assign and unassign the test role (and no other role), read the test role,
-- assign and unassign the test org as member or manager (and no other org), read the test org,
+- assign and unassign the two test orgs as member or manager (and no other org), read the test orgs,
 - read the test resource, and read connectors (to recognise a manual resource by its connector type),
 - read, create, change and delete shadows (accounts) on the test resource,
 - read and delete (`#delete` plus `#cancelCase`) the cases of the test resource, and complete the work items assigned
@@ -39,7 +40,7 @@ Everything else on the instance is invisible to it. Model actions are listed one
 
 Tested with midPoint 4.10. You need an administrator account on the test instance once.
 
-1. **Import the five files** in the order of their numbers: *Import object* in the GUI (or the `ninja` tool), with
+1. **Import the six files** in the order of their numbers: *Import object* in the GUI (or the `ninja` tool), with
    *Overwrite existing object* if you import them again.
 2. **Set a password** for `midpointtools-api` in the GUI (*Users* → `midpointtools-api` → *Password*). Keep it out of
    the repository.
@@ -72,9 +73,11 @@ Tested with midPoint 4.10. You need an administrator account on the test instanc
    deletes the cases of its account.
 
 With `MIDPOINT_TEST_ORG` set, the test also assigns `midPointTools Test Org` as member and as manager, changes the
-manager assignment, and removes both again.
+manager assignment, and removes both again. With `MIDPOINT_TEST_ORG2` as well, it assigns both orgs in one call,
+moves the user from one org to the other with `Move-midPointOrgAssignment` (also when the user is already in the
+target org) and removes both orgs in one call.
 
-Nothing else is changed: the role, the org, the resource and all other objects are only read.
+Nothing else is changed: the role, the orgs, the resource and all other objects are only read.
 
 ## Troubleshooting
 

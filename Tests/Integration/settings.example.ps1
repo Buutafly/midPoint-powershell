@@ -9,6 +9,7 @@ $env:MIDPOINT_PASSWORD = ''          # never commit a password
 $env:MIDPOINT_TEST_ROLE = 'midPointTools Test Role'
 $env:MIDPOINT_TEST_RESOURCE = 'midPointTools Test Resource'   # a manual resource is detected by its connector
 $env:MIDPOINT_TEST_ORG = 'midPointTools Test Org'
+$env:MIDPOINT_TEST_ORG2 = 'midPointTools Test Org 2'   # several orgs in one modification, Move-midPointOrgAssignment
 
 # Optional: a single-valued string extension item of UserType on your instance (local name, no namespace).
 # $env:MIDPOINT_TEST_EXTENSION_ITEM = 'costCenter'

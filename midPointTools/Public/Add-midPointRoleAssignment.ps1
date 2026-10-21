@@ -1,17 +1,19 @@
 function Add-midPointRoleAssignment {
     <#
     .SYNOPSIS
-    Assigns a role to a midPoint user.
+    Assigns one or more roles to a midPoint user.
 
     .DESCRIPTION
-    Adds an assignment with targetRef to the role, optionally with its own status and validity.
-    midPoint then provisions what the role induces, as for an assignment made in the GUI.
+    Adds an assignment with targetRef to each role, optionally with its own status and validity.
+    midPoint then provisions what the roles induce, as for an assignment made in the GUI.
+    Several roles in -Role go into one modification (one PATCH), so midPoint provisions once.
 
     .PARAMETER Identity
     The user: name, OID, or an object from Get-midPointUser.
 
     .PARAMETER Role
-    The role: name, OID, or an object from Get-midPointRole.
+    One or more roles: name, OID, or an object from Get-midPointRole. All of them are assigned in one
+    modification, with the same relation, status and validity.
 
     .PARAMETER Relation
     The relation, e.g. manager or approver. Without it midPoint uses the default relation (member).
@@ -26,13 +28,18 @@ function Add-midPointRoleAssignment {
     The assignment is active until this point in time.
 
     .PARAMETER PassThru
-    Returns the user's assignments of this role.
+    Returns the user's assignments of these roles.
 
     .EXAMPLE
     Add-midPointRoleAssignment jack -Role 'Some Role'
 
     .EXAMPLE
     Add-midPointRoleAssignment jack -Role 'Some Role' -ValidTo (Get-Date).AddDays(30) -PassThru
+
+    .EXAMPLE
+    Add-midPointRoleAssignment jack -Role 'Some Role', 'Other Role'
+
+    Assigns both roles in one modification.
     #>
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '', Justification = 'The shared assignment code calls ShouldProcess on this cmdlet.')]
     [CmdletBinding(SupportsShouldProcess)]
@@ -42,7 +49,7 @@ function Add-midPointRoleAssignment {
         [object] $Identity,
 
         [Parameter(Mandatory, Position = 1)]
-        [object] $Role,
+        [object[]] $Role,
 
         [string] $Relation,
 
@@ -56,10 +63,10 @@ function Add-midPointRoleAssignment {
     )
 
     begin {
-        $roleOid = Resolve-midPointObjectOid -InputObject $Role -Type roles
+        $roleOids = @(foreach ($t in $Role) { Resolve-midPointObjectOid -InputObject $t -Type roles })
     }
 
     process {
-        Add-midPointAssignment -Kind Role -Cmdlet $PSCmdlet -Parameters $PSBoundParameters -Target $Role -TargetOid $roleOid
+        Add-midPointAssignment -Kind Role -Cmdlet $PSCmdlet -Parameters $PSBoundParameters -Target $Role -TargetOid $roleOids
     }
 }

@@ -40,7 +40,7 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
        (`PATCH users/<oid>?options=reconcile`, empty modification). Runs 13 and 16 green: with and without reconcile
        an assignment whose `validFrom` has passed is provisioned, hence `-NoReconcile`.
      - `feature/assignment-batch`: `-Role` / `-Org` take several targets (one PATCH); `Move-midPointOrgAssignment
-       -From -To` (one PATCH).
+       -From -To [-Relation]` (one PATCH). Integration run 15 green (`060-org-test-2.xml`, `MIDPOINT_TEST_ORG2`).
      - `feature/remove-shadow`: `Remove-midPointShadow` (`DELETE shadows/<oid>`, 404 / 409 as warnings).
      - `feature/org-extension`: `Extension` on org objects (same converter as users). Integration run 19
        green: GET and search both return the extension (`MIDPOINT_TEST_ORG_EXTENSION_ITEM`, value on Test Org 2).

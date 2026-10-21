@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  midPointTools integration tests: a second org, so the tests can assign two orgs in one modification and move
+  their test user from one org to the other (Move-midPointOrgAssignment). It induces nothing.
+-->
+<org oid="6d707400-0000-4000-8000-000000000006"
+        xmlns="http://midpoint.evolveum.com/xml/ns/public/common/common-3">
+
+    <name>midPointTools Test Org 2</name>
+    <description>Assigned by the midPointTools integration tests. Induces nothing.</description>
+    <displayName>midPointTools Test Org 2</displayName>
+    <identifier>MPTEST-ORG2</identifier>
+</org>
