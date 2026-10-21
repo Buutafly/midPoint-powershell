@@ -13,6 +13,7 @@
 #   MIDPOINT_TEST_RESOURCE         a resource the role provisions to (needs MIDPOINT_TEST_ROLE)
 #   MIDPOINT_SHADOW_TIMEOUT_SEC    how long to wait for the account (default 180)
 #   MIDPOINT_TEST_ORG              an org name to assign / unassign (as member and as manager)
+#   MIDPOINT_TEST_ORG2             a second org (needs MIDPOINT_TEST_ORG): two orgs in one call, Move-midPointOrgAssignment
 #   MIDPOINT_TEST_EXTENSION_ITEM   a single-valued string extension item of UserType (local name, e.g. costCenter)
 #
 # Run: Invoke-Pester ./Tests/Integration -Tag Integration -Output Detailed
@@ -32,6 +33,7 @@ BeforeDiscovery {
     $script:hasResource = $script:hasRole -and [bool]$env:MIDPOINT_TEST_RESOURCE
     $script:hasExtension = [bool]$env:MIDPOINT_TEST_EXTENSION_ITEM
     $script:hasOrg = [bool]$env:MIDPOINT_TEST_ORG
+    $script:hasOrg2 = $script:hasOrg -and [bool]$env:MIDPOINT_TEST_ORG2
 }
 
 Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
@@ -302,6 +304,51 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
             if (-not $org) { Set-ItResult -Skipped -Because 'the test org is not found (see the warning above)'; return }
             Remove-midPointOrgAssignment $user -Org $org -Confirm:$false
             Get-midPointOrgAssignment $user -Org $org | Should -BeNullOrEmpty
+        }
+
+        Context 'Two orgs (MIDPOINT_TEST_ORG2)' -Skip:(-not $hasOrg2) {
+            BeforeAll {
+                $script:org2 = Get-midPointOrg $env:MIDPOINT_TEST_ORG2
+                if (-not $org2) { Write-Warning "Test org 2 '$env:MIDPOINT_TEST_ORG2' not found (import 060-org-test-2.xml and re-import 030-role-api.xml)." }
+
+                function Get-TestMembership {
+                    # 'org name:relation' of the user's org assignments, sorted.
+                    @(Get-midPointOrgAssignment $user | ForEach-Object { "$($_.Org):$($_.Relation)" } | Sort-Object)
+                }
+            }
+
+            It 'assigns both orgs in one call' {
+                if (-not ($org -and $org2)) { Set-ItResult -Skipped -Because 'a test org is not found'; return }
+                $a = @(Add-midPointOrgAssignment $user -Org $org, $org2 -PassThru)
+                Write-Host "Org assignments after adding both: $(($a | ForEach-Object { "$($_.Org) (id $($_.AssignmentId))" }) -join '; ')"
+                @($a.Org | Sort-Object) | Should -Be @(@($org.Name, $org2.Name) | Sort-Object)
+            }
+
+            It 'moves from org 2 to org 1 while already in org 1 (only removes org 2)' {
+                if (-not ($org -and $org2)) { Set-ItResult -Skipped -Because 'a test org is not found'; return }
+                Move-midPointOrgAssignment $user -From $org2 -To $org -Confirm:$false
+                Get-TestMembership | Should -Be @("$($org.Name):default")
+            }
+
+            It 'moves from org 1 to org 2 in one modification' {
+                if (-not ($org -and $org2)) { Set-ItResult -Skipped -Because 'a test org is not found'; return }
+                $a = @(Move-midPointOrgAssignment $user -From $org -To $org2 -PassThru -Confirm:$false)
+                $a.Org | Should -Be $org2.Name
+                Get-TestMembership | Should -Be @("$($org2.Name):default")
+                Write-Host "parentOrgRef after the move: $(Format-Json @(Get-ModuleProperty (Get-midPointUser -Oid $user.Oid).Raw 'parentOrgRef'))"
+            }
+
+            It 'fails to move from an org the user is not in' {
+                if (-not ($org -and $org2)) { Set-ItResult -Skipped -Because 'a test org is not found'; return }
+                { Move-midPointOrgAssignment $user -From $org -To $org2 -Confirm:$false } | Should -Throw '*has no assignment*'
+            }
+
+            It 'removes both orgs in one call' {
+                if (-not ($org -and $org2)) { Set-ItResult -Skipped -Because 'a test org is not found'; return }
+                Add-midPointOrgAssignment $user -Org $org
+                Remove-midPointOrgAssignment $user -Org $org, $org2 -Confirm:$false
+                Get-midPointOrgAssignment $user | Should -BeNullOrEmpty
+            }
         }
     }
 
