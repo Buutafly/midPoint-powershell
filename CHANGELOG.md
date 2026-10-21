@@ -14,8 +14,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), ver
   empty modification), like the recompute task: mappings and provisioning run, provisioning errors are reported.
   `-NoReconcile` skips the reconciliation (the resources are not read).
 - `Remove-midPointShadow`: deletes an account on its resource (`DELETE shadows/<oid>`, like "delete projection"),
-  from Get-midPointShadow objects or shadow OIDs; other objects are refused. A shadow that is already gone (404) or dead is a
-  warning; an account that is still assigned (409, assignment policy) is an error.
+  from Get-midPointShadow objects or shadow OIDs; other objects are refused. A shadow that is already gone (404) or
+  dead is a warning; an account that is still assigned (409, assignment policy) is an error.
 
 ## [0.1.0] - 2026-10-18
 
