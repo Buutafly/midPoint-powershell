@@ -37,8 +37,8 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
    - Gaps found by a consumer test script that still called private functions (2026-10-21), one branch and pull
      request each, in this order; then `release/0.2.0` once all are merged and an integration run is green:
      - `feature/recompute`: `Invoke-midPointRecompute -Identity [-NoReconcile] [-PassThru]`
-       (`PATCH users/<oid>?options=reconcile`, empty modification). Run 13 green: with and without reconcile an
-       assignment whose `validFrom` has passed is provisioned, hence `-NoReconcile`; its own check is in the next run.
+       (`PATCH users/<oid>?options=reconcile`, empty modification). Runs 13 and 16 green: with and without reconcile
+       an assignment whose `validFrom` has passed is provisioned, hence `-NoReconcile`.
      - `feature/assignment-batch`: `-Role` / `-Org` take several targets (one PATCH); `Move-midPointOrgAssignment
        -From -To` (one PATCH).
      - `feature/remove-shadow`: `Remove-midPointShadow` (`DELETE shadows/<oid>`, 404 / 409 as warnings).

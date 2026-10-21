@@ -73,7 +73,7 @@ Reference: [midPoint REST API](https://docs.evolveum.com/midpoint/reference/inte
 - Recompute (runs 12 and 13, 2026-10-21): `PATCH users/{oid}?options=reconcile` with `{ "objectModification": {} }`
   → HTTP 204; an empty modification **without** options is accepted too (HTTP 204). Both request the account of an
   assignment whose `validFrom` has just passed (users `MPTEST-…-RCA` / `-RCB`, a new add case on the manual
-  resource), so `Invoke-midPointRecompute` offers `-NoReconcile`. `POST users/{oid}/recompute` does not exist on 4.10
+  resource), so `Invoke-midPointRecompute` offers `-NoReconcile` (confirmed through the cmdlet in run 16). `POST users/{oid}/recompute` does not exist on 4.10
   (HTTP 404).
 - `DELETE shadows/{oid}` of an account that is still assigned → **HTTP 409** "Attempt to delete shadow(...) while it
   is assigned violates an assignment policy" (run 12, test resource without `projection` settings, i.e. midPoint's
@@ -124,11 +124,6 @@ authorization (`AUTZ.n> Evaluating authorization ...`) with its decision.
 - With `consistency/refreshOnRead` the shadow picks up the closed case the next time it is read.
 
 ## To verify on midPoint 4.10 (TODO)
-
-Recompute (`Invoke-midPointRecompute`, from 2026-10-21):
-
-- [ ] `Invoke-midPointRecompute -NoReconcile` (the empty modification without options, now through the cmdlet)
-      requests the account of an assignment whose `validFrom` has just passed (user `MPTEST-…-RCA`).
 
 Run `Tests/Integration` with `MIDPOINT_TEST_ROLE` and `MIDPOINT_TEST_RESOURCE` set for the remaining items
 (`MIDPOINT_TEST_EXTENSION_ITEM` for the extension item). The integration test prints the raw JSON of each item.
