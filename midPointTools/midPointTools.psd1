@@ -1,6 +1,6 @@
 @{
     RootModule           = 'midPointTools.psm1'
-    ModuleVersion        = '0.1.0'
+    ModuleVersion        = '0.2.0'
     GUID                 = '7aeaa914-f9e4-48a0-b34a-a6529d56b67d'
     Author               = 'Buutafly'
     CompanyName          = 'Community'
