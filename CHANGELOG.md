@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), ver
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-25
+
 ### Added
 - Orgs: `Get-midPointOrg`, `Get-` / `Add-` / `Set-` / `Remove-midPointOrgAssignment` (membership as member, manager or
   another relation, with assignment status and validity).
@@ -40,5 +42,6 @@ First prototype.
 - Role assignments without a relation show `Relation` `default` (midPoint's default relation).
 - Example midPoint objects for the integration tests (manual resource, test role, API user with limited rights).
 
-[Unreleased]: https://github.com/Buutafly/midPoint-powershell/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Buutafly/midPoint-powershell/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Buutafly/midPoint-powershell/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Buutafly/midPoint-powershell/releases/tag/v0.1.0

@@ -1,12 +1,15 @@
 # Working notes
 
-Handover notes for the next working session. Last update: 2026-10-18.
+Handover notes for the next working session. Last update: 2026-10-25.
 REST details and the verification checklist are in [docs/rest-notes.md](docs/rest-notes.md).
 
 ## Status
 
 - **0.1.0** of `midPointTools` released on the PowerShell Gallery (2026-10-18, tag `v0.1.0`). 24 cmdlets: session, users, activation, role assignments,
   resources, shadows (accounts), cases. Unit tests (Pester, mocked HTTP) and PSScriptAnalyzer pass locally and in CI.
+- **0.2.0** prepared on `release/0.2.0` (2026-10-25): all four gaps of the consumer test script merged
+  (Buutafly/midPoint-powershell#4 to #7), 32 cmdlets. Open: integration run on the release branch, merge, tag `v0.2.0`
+  (user), then step 5 of "Release 0.1.0" below.
 - Integration tests against a midPoint **4.10** test instance (details in `docs/rest-notes.md`):
   - With a real resource (ConnId connector) and a REST user with unrestricted single model actions: **all green**
     (users, activation, role assignment add / change / remove, account appears, account disabled after unassign).
@@ -35,7 +38,7 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
      `Set-ADAccountPassword -Reset`. Creating users without a password stays possible (`-Password` is optional).
    - OIDC / bearer token login: in a separate session, on its own branch.
    - Gaps found by a consumer test script that still called private functions (2026-10-21), one branch and pull
-     request each, in this order; then `release/0.2.0` once all are merged and an integration run is green:
+     request each, in this order (all merged by 2026-10-25); then `release/0.2.0` once an integration run is green:
      - `feature/recompute`: `Invoke-midPointRecompute -Identity [-NoReconcile] [-PassThru]`
        (`PATCH users/<oid>?options=reconcile`, empty modification). Runs 13 and 16 green: with and without reconcile
        an assignment whose `validFrom` has passed is provisioned, hence `-NoReconcile`.
