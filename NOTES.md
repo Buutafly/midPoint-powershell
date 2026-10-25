@@ -8,8 +8,9 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
 - **0.1.0** of `midPointTools` released on the PowerShell Gallery (2026-10-18, tag `v0.1.0`). 24 cmdlets: session, users, activation, role assignments,
   resources, shadows (accounts), cases. Unit tests (Pester, mocked HTTP) and PSScriptAnalyzer pass locally and in CI.
 - **0.2.0** prepared on `release/0.2.0` (2026-10-25): all four gaps of the consumer test script merged
-  (Buutafly/midPoint-powershell#4 to #7), 32 cmdlets. Open: integration run on the release branch, merge, tag `v0.2.0`
-  (user), then step 5 of "Release 0.1.0" below.
+  (Buutafly/midPoint-powershell#4 to #7), 32 cmdlets. Integration run 21 on the release branch **all green**
+  (282 tests, including two orgs / move, account delete and org extension). Open: merge, tag `v0.2.0` (user), then
+  step 5 of "Release 0.1.0" below.
 - Integration tests against a midPoint **4.10** test instance (details in `docs/rest-notes.md`):
   - With a real resource (ConnId connector) and a REST user with unrestricted single model actions: **all green**
     (users, activation, role assignment add / change / remove, account appears, account disabled after unassign).
