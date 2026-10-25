@@ -81,6 +81,13 @@ Reference: [midPoint REST API](https://docs.evolveum.com/midpoint/reference/inte
 - Several assignment changes in one modification (run 15, 2026-10-21): two `add` deltas on `assignment` (two orgs)
   and two `delete { "@id": n }` deltas each in one PATCH; `delete { "@id": n }` of one org plus `add` of another org
   in one PATCH (`Move-midPointOrgAssignment`): `parentOrgRef` afterwards only has the new org.
+- Account delete (run 18, 2026-10-21, `Remove-midPointShadow`): `POST shadows` with `{ "shadow": { resourceRef,
+  objectClass "ri:AccountObjectClass", kind, intent, attributes { "@ns": ".../resource/instance-3", username, mail } } }`
+  → HTTP 201, OID in `Location`; on the manual resource an add case. `DELETE shadows/{oid}` of that account (no owner)
+  opens a delete case; once completed the shadow is `dead: true`, `exists: false`. A second `DELETE` of the **dead**
+  shadow answers without error but opens **another** case, so `Remove-midPointShadow` skips dead shadows with a
+  warning (run 20, 2026-10-25: warning only, no new case). `DELETE` of an assigned account → HTTP 409 (assignment
+  policy), as in runs 12 and 20.
 - Org extension (run 19, 2026-10-21): `GET orgs/{oid}` and `POST orgs/search` both return the org's `extension` with
   plain keys (the search result also carries an `@ns` entry), so `Get-midPointOrg` fills `Extension` from a search
   without an extra GET.

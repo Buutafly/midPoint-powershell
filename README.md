@@ -63,6 +63,7 @@ Move-midPointOrgAssignment jdoe -From 'Some Org' -To 'Other Org'  # one modifica
 Get-midPointShadow jdoe -Resource 'Some Resource'
 Invoke-midPointRecompute jdoe                                     # mappings and provisioning (reconcile)
 Invoke-midPointRecompute jdoe -NoReconcile                        # without reading the resources
+Get-midPointShadow jdoe -Resource 'Some Resource' -NoFetch | Remove-midPointShadow  # deletes the account
 Remove-midPointUser jdoe
 ```
 
@@ -109,7 +110,7 @@ Get-midPointCase -Resource 'Manual Resource' -Account jdoe -State Open | Complet
 | Roles | `Get-midPointRole`, `Get-midPointRoleAssignment`, `Add-midPointRoleAssignment`, `Set-midPointRoleAssignment`, `Remove-midPointRoleAssignment` |
 | Orgs | `Get-midPointOrg`, `Get-midPointOrgAssignment`, `Add-midPointOrgAssignment`, `Set-midPointOrgAssignment`, `Remove-midPointOrgAssignment`, `Move-midPointOrgAssignment` |
 | Resources | `Get-midPointResource` |
-| Accounts | `Get-midPointShadow`, `Test-midPointShadow`, `Wait-midPointShadow` |
+| Accounts | `Get-midPointShadow`, `Test-midPointShadow`, `Wait-midPointShadow`, `Remove-midPointShadow` |
 | Cases | `Get-midPointCase`, `Complete-midPointCase`, `Remove-midPointCase` |
 
 ### Status and validity

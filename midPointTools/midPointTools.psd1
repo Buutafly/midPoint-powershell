@@ -36,6 +36,7 @@
         'Move-midPointOrgAssignment'
         'Get-midPointResource'
         'Get-midPointShadow'
+        'Remove-midPointShadow'
         'Test-midPointShadow'
         'Wait-midPointShadow'
         'Get-midPointCase'

@@ -20,6 +20,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), ver
   (no state without an org in between).
 - Example org `midPointTools Test Org 2` (`MIDPOINT_TEST_ORG2`) for the integration tests; the example API role may
   assign it.
+- `Remove-midPointShadow`: deletes an account on its resource (`DELETE shadows/<oid>`, like "delete projection"),
+  from Get-midPointShadow objects or shadow OIDs; other objects are refused. A shadow that is already gone (404) or
+  dead is a warning; an account that is still assigned (409, assignment policy) is an error.
 - `Extension` property on org objects (`(Get-midPointOrg 'Some Org').Extension.costCenter`), like on users.
 
 ## [0.1.0] - 2026-10-18
