@@ -15,6 +15,8 @@
 #   MIDPOINT_TEST_ORG              an org name to assign / unassign (as member and as manager)
 #   MIDPOINT_TEST_ORG2             a second org (needs MIDPOINT_TEST_ORG): two orgs in one call, Move-midPointOrgAssignment
 #   MIDPOINT_TEST_EXTENSION_ITEM   a single-valued string extension item of UserType (local name, e.g. costCenter)
+#   MIDPOINT_TEST_ORG_EXTENSION_ITEM  an extension item of OrgType (local name) with a value on the test org
+#                                     (MIDPOINT_TEST_ORG2 if set, else MIDPOINT_TEST_ORG); only read
 #
 # Run: Invoke-Pester ./Tests/Integration -Tag Integration -Output Detailed
 # Creates one user named MPTEST-<random> and deletes it at the end (plus MPTEST-<random>-PW / -EXT for the password
@@ -34,6 +36,7 @@ BeforeDiscovery {
     $script:hasExtension = [bool]$env:MIDPOINT_TEST_EXTENSION_ITEM
     $script:hasOrg = [bool]$env:MIDPOINT_TEST_ORG
     $script:hasOrg2 = $script:hasOrg -and [bool]$env:MIDPOINT_TEST_ORG2
+    $script:hasOrgExtension = [bool]$env:MIDPOINT_TEST_ORG_EXTENSION_ITEM -and ($env:MIDPOINT_TEST_ORG2 -or $env:MIDPOINT_TEST_ORG)
 }
 
 Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
@@ -631,6 +634,28 @@ Describe 'midPoint integration' -Tag 'Integration' -Skip:(-not $configured) {
             Remove-midPointShadow $shdOid -Confirm:$false -WarningVariable w -WarningAction SilentlyContinue
             "$w" | Should -BeLike '*already deleted*'
             if ($manual) { @(Get-TestCase -Account $shdName -State Open).Count | Should -Be 0 -Because 'nothing was sent' }
+        }
+    }
+
+    Context 'Org extension (MIDPOINT_TEST_ORG_EXTENSION_ITEM)' -Skip:(-not $hasOrgExtension) {
+        BeforeAll {
+            $script:extItem = $env:MIDPOINT_TEST_ORG_EXTENSION_ITEM
+            $script:extOrgName = if ($env:MIDPOINT_TEST_ORG2) { $env:MIDPOINT_TEST_ORG2 } else { $env:MIDPOINT_TEST_ORG }
+            $script:extOrg = Get-midPointOrg $extOrgName
+        }
+
+        It 'reads the extension item of the org by OID (GET orgs/{oid})' {
+            $extOrg | Should -Not -BeNullOrEmpty -Because "the org '$extOrgName' must exist and be readable"
+            $o = Get-midPointOrg -Oid $extOrg.Oid
+            Write-Host "extension of '$extOrgName' (GET): $(Format-Json (Get-ModuleProperty $o.Raw 'extension'))"
+            $o.Extension[$extItem] | Should -Not -BeNullOrEmpty -Because "the test org has a value in extension/$extItem"
+        }
+
+        It 'reads the extension item from a search by name (POST orgs/search)' {
+            $extOrg | Should -Not -BeNullOrEmpty
+            Write-Host "extension of '$extOrgName' (search): $(Format-Json (Get-ModuleProperty $extOrg.Raw 'extension'))"
+            $extOrg.Extension[$extItem] | Should -Not -BeNullOrEmpty -Because 'the search result carries the extension too'
+            $extOrg.Extension[$extItem] | Should -Be (Get-midPointOrg -Oid $extOrg.Oid).Extension[$extItem]
         }
     }
 }

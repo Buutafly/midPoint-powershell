@@ -116,3 +116,8 @@ The extension test needs an extension item that exists on your instance, so it o
 `MIDPOINT_TEST_EXTENSION_ITEM` names one: a single-valued string item of `UserType`, given by its local name
 (e.g. `costCenter`, no namespace). The test sets it with `New-midPointUser -Property @{ 'extension/<item>' = ... }`,
 changes and clears it with `Set-midPointUser -Replace`. The example API role already allows this (no item limits).
+
+For orgs, `MIDPOINT_TEST_ORG_EXTENSION_ITEM` names an extension item of `OrgType` (local name). The test only reads it:
+set a value on `midPointTools Test Org 2` (or on `midPointTools Test Org` when `MIDPOINT_TEST_ORG2` is not set) once,
+in the GUI or under `<extension>` in your local copy of the org (your schema's namespace stays out of the repository).
+The test checks that `Get-midPointOrg` returns it in `Extension`, both by OID and from a search by name.

@@ -45,7 +45,8 @@ REST details and the verification checklist are in [docs/rest-notes.md](docs/res
        404 or dead shadow = warning, 409 = error because midPoint also answers 409 for an assigned account).
        Run 18 green; a DELETE of a dead shadow opened another case, so dead shadows are now skipped
        (run 20 green: a dead shadow only warns, no new case).
-     - `feature/org-extension`: `Extension` on org objects.
+     - `feature/org-extension`: `Extension` on org objects (same converter as users). Integration run 19
+       green: GET and search both return the extension (`MIDPOINT_TEST_ORG_EXTENSION_ITEM`, value on Test Org 2).
 2. Open from run 3: on a manual resource the user once had no linked shadow 180 s after the assignment (not seen
    since run 6).
 
