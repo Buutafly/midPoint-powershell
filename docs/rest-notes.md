@@ -86,7 +86,8 @@ Reference: [midPoint REST API](https://docs.evolveum.com/midpoint/reference/inte
   → HTTP 201, OID in `Location`; on the manual resource an add case. `DELETE shadows/{oid}` of that account (no owner)
   opens a delete case; once completed the shadow is `dead: true`, `exists: false`. A second `DELETE` of the **dead**
   shadow answers without error but opens **another** case, so `Remove-midPointShadow` skips dead shadows with a
-  warning. `DELETE` of an assigned account → HTTP 409 (assignment policy), as in run 12.
+  warning (run 20, 2026-10-25: warning only, no new case). `DELETE` of an assigned account → HTTP 409 (assignment
+  policy), as in runs 12 and 20.
 - Run 3 on a manual resource: 180 s after assigning the role, the user had no linked shadow on that resource
   (neither live nor pending). Still to be analysed.
 
